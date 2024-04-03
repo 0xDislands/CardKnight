@@ -2,9 +2,22 @@
 version = 1
 
 [[package]]
+name = "aeternum"
+version = "0.6.0-alpha.10"
+dependencies = [
+ "cubit",
+ "dojo",
+]
+
+[[package]]
+name = "cubit"
+version = "1.3.0"
+source = "git+https://github.com/influenceth/cubit.git?rev=9402f71#9402f710716b12c21cd1e481c57c54edaf5bb4b1"
+
+[[package]]
 name = "dojo"
 version = "0.5.1"
-source = "git+https://github.com/dojoengine/dojo?tag=v0.6.0-alpha.7#f4c8111aefe2672d04356df64914871a5bcb536d"
+source = "git+https://github.com/dojoengine/dojo?tag=v0.6.0-alpha.10#c0da5b447185c8c191d9b0e337e00e7843a67d94"
 dependencies = [
  "dojo_plugin",
 ]
@@ -13,10 +26,3 @@ dependencies = [
 name = "dojo_plugin"
 version = "0.3.11"
 source = "git+https://github.com/dojoengine/dojo?tag=v0.3.11#1e651b5d4d3b79b14a7d8aa29a92062fcb9e6659"
-
-[[package]]
-name = "dojo_starter"
-version = "0.6.0-alpha.7"
-dependencies = [
- "dojo",
-]

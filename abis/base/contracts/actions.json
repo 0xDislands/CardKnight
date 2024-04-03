@@ -55,55 +55,17 @@
   },
   {
     "type": "impl",
-    "name": "ActionsImpl",
-    "interface_name": "dojo_starter::systems::actions::IActions"
-  },
-  {
-    "type": "enum",
-    "name": "dojo_starter::models::moves::Direction",
-    "variants": [
-      {
-        "name": "None",
-        "type": "()"
-      },
-      {
-        "name": "Left",
-        "type": "()"
-      },
-      {
-        "name": "Right",
-        "type": "()"
-      },
-      {
-        "name": "Up",
-        "type": "()"
-      },
-      {
-        "name": "Down",
-        "type": "()"
-      }
-    ]
+    "name": "PlayerActionsImpl",
+    "interface_name": "aeternum::systems::actions::IActions"
   },
   {
     "type": "interface",
-    "name": "dojo_starter::systems::actions::IActions",
+    "name": "aeternum::systems::actions::IActions",
     "items": [
       {
         "type": "function",
-        "name": "spawn",
+        "name": "start_game",
         "inputs": [],
-        "outputs": [],
-        "state_mutability": "view"
-      },
-      {
-        "type": "function",
-        "name": "move",
-        "inputs": [
-          {
-            "name": "direction",
-            "type": "dojo_starter::models::moves::Direction"
-          }
-        ],
         "outputs": [],
         "state_mutability": "view"
       }
@@ -158,34 +120,12 @@
   },
   {
     "type": "event",
-    "name": "dojo_starter::systems::actions::actions::Moved",
-    "kind": "struct",
-    "members": [
-      {
-        "name": "player",
-        "type": "core::starknet::contract_address::ContractAddress",
-        "kind": "key"
-      },
-      {
-        "name": "direction",
-        "type": "dojo_starter::models::moves::Direction",
-        "kind": "data"
-      }
-    ]
-  },
-  {
-    "type": "event",
-    "name": "dojo_starter::systems::actions::actions::Event",
+    "name": "aeternum::systems::actions::actions::Event",
     "kind": "enum",
     "variants": [
       {
         "name": "UpgradeableEvent",
         "type": "dojo::components::upgradeable::upgradeable::Event",
-        "kind": "nested"
-      },
-      {
-        "name": "Moved",
-        "type": "dojo_starter::systems::actions::actions::Moved",
         "kind": "nested"
       }
     ]
