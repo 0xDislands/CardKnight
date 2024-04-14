@@ -13,19 +13,16 @@ fn spawn_coords(player: ContractAddress, mut salt: u32) -> (u8, u8) {
     let salt: felt252 = salt.into();
     let mut x = 10;
     let mut y = 10;
-    loop {
-        let hash = pedersen::pedersen(player, salt);
-        let rnd_seed = match u128s_from_felt252(hash) {
+    let hash = pedersen::pedersen(player, salt);
+    let rnd_seed = match u128s_from_felt252(hash) {
             U128sFromFelt252Result::Narrow(low) => low,
             U128sFromFelt252Result::Wide((high, low)) => low,
-        };
-        let (rnd_seed, x_) = u128_safe_divmod(rnd_seed, X_RANGE.try_into().unwrap());
-        let (rnd_seed, y_) = u128_safe_divmod(rnd_seed, Y_RANGE.try_into().unwrap());
-        let x_: felt252 = x_.into();
-        let y_: felt252 = y_.into();
-        break;
     };
-    return (x, y);
+    let (rnd_seed, x_) = u128_safe_divmod(rnd_seed, X_RANGE.try_into().unwrap());
+    let (rnd_seed, y_) = u128_safe_divmod(rnd_seed, Y_RANGE.try_into().unwrap());
+    let x_: u8 = x_.try_into().unwrap();
+    let y_: u8 = y_.try_into().unwrap();
+    return (x_, y_);
 }
 
 fn type_at_position(x: u8, y: u8) -> (u32, u32) {
@@ -51,5 +48,25 @@ fn type_at_position(x: u8, y: u8) -> (u32, u32) {
         return (1, value); // Monster
     } else {
         return (0, value); // Item
+    }
+}
+
+fn cascade_move(world: IWorldDispatcher, game_id: u32, x: u8, y: u8, direction: Direction) {
+    if let Some(card) = get_card_at(world, game_id, x, y) {
+        let (next_x, next_y) = match direction {
+            Direction::Up => (x, y + 1),
+            Direction::Down => (x, y - 1),
+            Direction::Left => (x - 1, y),
+            Direction::Right => (x + 1, y),
+        };
+        // Check if the next position is within bounds and free
+        if is_position_free(world, game_id, next_x, next_y) {
+            // Move the card to the next position
+            set_card_at(world, game_id, next_x, next_y, card);
+            // Optionally, clear the current position
+        } else {
+            // Recurse if the next position is occupied
+            cascade_move(world, game_id, next_x, next_y, direction);
+        }
     }
 }

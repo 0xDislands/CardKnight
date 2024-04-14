@@ -36,6 +36,7 @@ struct Player {
     armor: u64,
     exp: u64,
     high_score: u64
+    total_moves: u64,
 }
 
 #[derive(Serde, Drop, Copy, PartialEq, Introspect)]
@@ -45,4 +46,12 @@ enum CardType {
     Item,
     Hidden,
     None,
+}
+
+#[derive(Serde, Drop, Copy, PartialEq, Introspect)]
+enum Direction {
+    Up,
+    Down,
+    Left,
+    Right,
 }

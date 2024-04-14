@@ -1,0 +1,40 @@
+kind = "DojoModel"
+class_hash = "0x3a7623f7accc19dabd50c2013b30ac8cccfbe865847e4e45ede842a672f6ab5"
+original_class_hash = "0x3a7623f7accc19dabd50c2013b30ac8cccfbe865847e4e45ede842a672f6ab5"
+abi = "manifests/dev/abis/base/models/aeternum_models_card.json"
+name = "aeternum::models::card"
+
+[[members]]
+name = "game_id"
+type = "u32"
+key = true
+
+[[members]]
+name = "x"
+type = "u8"
+key = true
+
+[[members]]
+name = "y"
+type = "u8"
+key = true
+
+[[members]]
+name = "card"
+type = "CardType"
+key = false
+
+[[members]]
+name = "health"
+type = "u32"
+key = false
+
+[[members]]
+name = "armor"
+type = "u32"
+key = false
+
+[[members]]
+name = "exp"
+type = "u32"
+key = false

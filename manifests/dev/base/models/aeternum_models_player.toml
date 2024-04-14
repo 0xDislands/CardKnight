@@ -1,0 +1,35 @@
+kind = "DojoModel"
+class_hash = "0x6e2ee7d4a068af18fe59d23d7b709e955df695695a1fdfe13b1d7b3f942c217"
+original_class_hash = "0x6e2ee7d4a068af18fe59d23d7b709e955df695695a1fdfe13b1d7b3f942c217"
+abi = "manifests/dev/abis/base/models/aeternum_models_player.json"
+name = "aeternum::models::player"
+
+[[members]]
+name = "game_id"
+type = "u32"
+key = true
+
+[[members]]
+name = "player"
+type = "ContractAddress"
+key = true
+
+[[members]]
+name = "health"
+type = "u64"
+key = false
+
+[[members]]
+name = "armor"
+type = "u64"
+key = false
+
+[[members]]
+name = "exp"
+type = "u64"
+key = false
+
+[[members]]
+name = "high_score"
+type = "u64"
+key = false
