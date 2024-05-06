@@ -10,7 +10,7 @@ trait IActions {
 #[dojo::contract]
 mod actions {
     use starknet::{ContractAddress, get_caller_address};
-    use aeternum::models::{Card, Game, Player, CardType, Direction};
+    use aeternum::models::{Card, Game, Player, CardType, Direction, CardTrait, CardImpl};
     use aeternum::utils::{spawn_coords, type_at_position};
     use aeternum::config::{BASE_HP, HP_PER_LEVEL};
 

@@ -1,1 +1,7 @@
 target
+bindings
+manifests
+abi
+assets
+*.lock
+*.db
