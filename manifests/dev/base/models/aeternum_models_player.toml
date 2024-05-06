@@ -1,6 +1,6 @@
 kind = "DojoModel"
-class_hash = "0x6e2ee7d4a068af18fe59d23d7b709e955df695695a1fdfe13b1d7b3f942c217"
-original_class_hash = "0x6e2ee7d4a068af18fe59d23d7b709e955df695695a1fdfe13b1d7b3f942c217"
+class_hash = "0x2db8eb9f6c8d178885eea8f2c4b0b264a646f18d4962264c4ff5928aaf3becc"
+original_class_hash = "0x2db8eb9f6c8d178885eea8f2c4b0b264a646f18d4962264c4ff5928aaf3becc"
 abi = "manifests/dev/abis/base/models/aeternum_models_player.json"
 name = "aeternum::models::player"
 
@@ -15,21 +15,46 @@ type = "ContractAddress"
 key = true
 
 [[members]]
-name = "health"
-type = "u64"
+name = "x"
+type = "u32"
 key = false
 
 [[members]]
-name = "armor"
-type = "u64"
+name = "y"
+type = "u32"
+key = false
+
+[[members]]
+name = "hp"
+type = "u32"
+key = false
+
+[[members]]
+name = "max_hp"
+type = "u32"
+key = false
+
+[[members]]
+name = "shield"
+type = "u32"
+key = false
+
+[[members]]
+name = "max_shield"
+type = "u32"
 key = false
 
 [[members]]
 name = "exp"
-type = "u64"
+type = "u32"
 key = false
 
 [[members]]
 name = "high_score"
-type = "u64"
+type = "u32"
+key = false
+
+[[members]]
+name = "total_moves"
+type = "u32"
 key = false

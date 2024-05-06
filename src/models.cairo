@@ -8,13 +8,14 @@ struct Card {
     #[key]
     game_id: u32,
     #[key]
-    x: u8,
+    x: u32,
     #[key]
-    y: u8,
-    card: CardType,
-    health: u32,
-    armor: u32,
-    exp: u32,
+    y: u32,
+    card_type: CardType,
+    hp: u32,
+    max_hp: u32,
+    shield: u32,
+    max_shield: u32
 }
 
 #[derive(Model, Copy, Drop, Serde)]
@@ -23,7 +24,7 @@ struct Game {
     game_id: u32,
     #[key]
     player: ContractAddress,
-    highest_score: u64,
+    highest_score: u64
 }
 
 #[derive(Model, Copy, Drop, Serde)]
@@ -32,11 +33,15 @@ struct Player {
     game_id: u32,
     #[key]
     player: ContractAddress,
-    health: u64,
-    armor: u64,
-    exp: u64,
-    high_score: u64
-    total_moves: u64,
+    x: u32,
+    y: u32,
+    hp: u32,
+    max_hp: u32,
+    shield: u32,
+    max_shield: u32,
+    exp: u32,
+    high_score: u32,
+    total_moves: u32,
 }
 
 #[derive(Serde, Drop, Copy, PartialEq, Introspect)]
@@ -54,4 +59,45 @@ enum Direction {
     Down,
     Left,
     Right,
+}
+
+trait CardTrait {
+    fn apply_effect(player: Player, card: Card) -> Player;
+}
+
+impl CardImpl of CardTrait {
+    fn apply_effect(player: Player, card: Card) -> Player {
+        let mut ref_player = player;
+        match card.card_type {
+            CardType::Monster => {
+                let mut damage = card.hp;
+                if (ref_player.shield > 0) {
+                    if (ref_player.shield - damage <= 0) {
+                        damage -= ref_player.shield;
+                        ref_player.shield = 0;
+                        ref_player.hp -= damage;
+                    }
+                    else {
+                        ref_player.shield -= damage;
+                    };
+                } else {
+                    // if remain_hp <= 0 ## This WILL BE WRITTEN WHEN MOVEMENT LOGIC IS FINISHED
+                    ref_player.hp = ref_player.hp - card.hp;
+                };
+                return ref_player;
+            },
+            CardType::Player => {
+                return ref_player;
+            },
+            CardType::Item => {
+                return ref_player;
+            },
+            CardType::Hidden => {
+                return ref_player;
+            },
+            CardType::None => {
+                return ref_player;
+            }
+        }
+    }
 }
