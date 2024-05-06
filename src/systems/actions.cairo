@@ -1,5 +1,5 @@
 use starknet::ContractAddress;
-use aeternum::models::{Direction};
+use card_knight::models::{Direction};
 
 #[dojo::interface]
 trait IActions {
@@ -10,9 +10,9 @@ trait IActions {
 #[dojo::contract]
 mod actions {
     use starknet::{ContractAddress, get_caller_address};
-    use aeternum::models::{Card, Game, Player, CardType, Direction, CardTrait, CardImpl};
-    use aeternum::utils::{spawn_coords, type_at_position};
-    use aeternum::config::{BASE_HP, HP_PER_LEVEL};
+    use card_knight::models::{Card, Game, Player, CardType, Direction, CardTrait, CardImpl};
+    use card_knight::utils::{spawn_coords, type_at_position};
+    use card_knight::config::{BASE_HP, HP_PER_LEVEL};
 
     use super::IActions;
 

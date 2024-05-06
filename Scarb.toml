@@ -1,6 +1,6 @@
 [package]
 cairo-version = "2.5.4"
-name = "aeternum"
+name = "card_knight"
 version = "0.6.0-alpha.10"
 
 [cairo]

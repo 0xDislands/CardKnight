@@ -2,7 +2,7 @@ use starknet::ContractAddress;
 
 use integer::{u128s_from_felt252, U128sFromFelt252Result, u128_safe_divmod};
 
-use aeternum::config::{X_RANGE, Y_RANGE, MAP_AMPLITUDE};
+use card_knight::config::{X_RANGE, Y_RANGE, MAP_AMPLITUDE};
 
 use cubit::f64::procgen::simplex3;
 use cubit::f64::types::fixed::FixedTrait;
