@@ -5,12 +5,14 @@ use card_knight::models::{Direction};
 trait IActions {
     fn start_game();
     fn move(game_id: u32, direction: Direction);
+    // fn cascade_move(game_id: u32, x: u32, y: u32, direction: Direction);
 }
 
 #[dojo::contract]
 mod actions {
     use starknet::{ContractAddress, get_caller_address};
-    use card_knight::models::{Card, Game, Player, CardType, Direction, CardTrait, CardImpl};
+    use card_knight::models::{Card, Game, Player, CardType, Direction};
+    use card_knight::systems::cards::cards::ICardsImpl;
     use card_knight::utils::{spawn_coords, type_at_position};
     use card_knight::config::{BASE_HP, HP_PER_LEVEL};
 
@@ -112,45 +114,34 @@ mod actions {
         fn move(world: IWorldDispatcher, game_id: u32, direction: Direction) {
             let player_address = get_caller_address();
             let mut player = get!(world, (game_id, player_address),(Player));
-            match direction {
-                Direction::Up => {
-                    let x = player.x;
-                    let y = player.y + 1;
-                    let existingCard = get!(world, (game_id, x, y), (Card));
-                    let playerCard = get!(world, (game_id, player), (Player));
-                    // Item
-                    if (existingCard.card_type == CardType::Item) {
-                        set!(
-                            world,
-                            (
-                                Card {
-                                    game_id,
-                                    x,
-                                    y,
-                                    card_type: CardType::Player,
-                                    hp: playerCard.hp,
-                                    max_hp: playerCard.max_hp,
-                                    shield: playerCard.shield,
-                                    max_shield: playerCard.max_shield,
-                                }
-                            )
-                        )
-                    }
-                },
-                Direction::Down => {
-                    let x = player.x;
-                    let y = player.y - 1;
-                },
-                Direction::Left => {
-                    let x = player.x - 1;
-                    let y = player.y;
-                },
-                Direction::Right => {
-                    let x = player.x + 1;
-                    let y = player.y;
-                }
+            let (next_x, next_y) = match direction {
+                Direction::Up => (player.x, player.y + 1),
+                Direction::Down => (player.x, player.y - 1),
+                Direction::Left => (player.x - 1, player.y),
+                Direction::Right => (player.x + 1, player.y)
+            };
+            let existingCard = get!(world, (game_id, next_x, next_y), (Card));
+            // Apply Effect 
+            let result = ICardsImpl::apply_effect(player, existingCard);
+            delete!(world, (existingCard));
+            set!(world, (result));
+            if (ICardsImpl::is_corner(player)) {
+                let x_destination = player.x;
+                let y_destination = player.y;
+                let x_direction = player.x; // - move_card.x - developing in cards.cairo
             }
+            else {
+                let heroCard = ICardsImpl::move_to_position(world, game_id, player.x, player.y, existingCard.x, existingCard.y);
+                set!(world, (heroCard));
+            }
+
         }
+
+        // fn cascade_move(world: IWorldDispatcher, game_id: u32, x: u32, y: u32, direction: Direction) {
+        //     let card = get!(world, (game_id, x, y), (Card));
+        //     let player = get!(world, (game_id, player), (Player));
+        //     return true;
+        // }
 
     }
 }
