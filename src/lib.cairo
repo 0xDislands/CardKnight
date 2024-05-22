@@ -1,8 +1,12 @@
 mod systems {
     mod actions;
-    mod cards;
 }
 
-mod models;
+mod models {
+    mod card;
+    mod game;
+    mod player;
+}
+
 mod config;
 mod utils;
