@@ -5,5 +5,4 @@ const MAP_AMPLITUDE: u128 = 16; // The lower the value, the highest variation in
 const BASE_HP: u32 = 10;
 const HP_PER_LEVEL: u32 = 5;
 
-// 
-const EXP_TO_LEVEL_UP: u32 = 3;
+

@@ -1,8 +1,9 @@
 use starknet::ContractAddress;
 use dojo::world::{IWorld, IWorldDispatcher, IWorldDispatcherTrait};
-use card_knight::config::EXP_TO_LEVEL_UP;
+use card_knight::config::{level::EXP_TO_LEVEL_UP};
 
-#[derive(Model, Copy, Drop, Serde, PartialEq)]
+#[derive(Copy, Drop, Serde, PartialEq)]
+#[dojo::model]
 struct Player {
     #[key]
     game_id: u32,
@@ -48,7 +49,7 @@ impl IPlayerImpl of IPlayer {
         if (new_player.exp > EXP_TO_LEVEL_UP) {
             new_player.exp = 0;
             new_player.level += 1;
-            IPlayerImpl::level_up(world, new_player, LevelUpOptions::IncreaseMaxHp);
+            Self::level_up(world, new_player, LevelUpOptions::IncreaseMaxHp);
         }
         set!(world, (new_player));
     }

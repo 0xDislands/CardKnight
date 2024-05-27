@@ -8,5 +8,10 @@ mod models {
     mod player;
 }
 
-mod config;
+mod config {
+    mod card;
+    mod level;
+    mod map;
+    mod player;
+}
 mod utils;

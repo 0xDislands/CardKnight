@@ -2,11 +2,11 @@ use starknet::ContractAddress;
 
 use integer::{u128s_from_felt252, U128sFromFelt252Result, u128_safe_divmod};
 
-use card_knight::config::{X_RANGE, Y_RANGE, MAP_AMPLITUDE};
+use card_knight::config::{map::{X_RANGE, Y_RANGE, MAP_AMPLITUDE}};
 
 use card_knight::models::{
     game::{Game, Direction}, 
-    card::{Card, CardTypeEnum, ICardImpl},
+    card::{Card, CardIdEnum, ICardImpl},
     player::{Player, IPlayerImpl, LevelUpOptions}
 };
 
@@ -31,7 +31,7 @@ fn spawn_coords(player: ContractAddress, mut salt: u32) -> (u32, u32) {
     return (x_, y_);
 }
 
-fn type_at_position(x: u32, y: u32) -> (u32, u32) {
+fn monster_type_at_position(x: u32, y: u32) -> (u32, u32) {
     let vec = Vec3Trait::new(
         FixedTrait::from_felt(x.into()) / FixedTrait::from_felt(MAP_AMPLITUDE.into()),
         FixedTrait::from_felt(0),
@@ -50,7 +50,7 @@ fn type_at_position(x: u32, y: u32) -> (u32, u32) {
         .try_into()
         .unwrap();
 
-    if (value > 30) {
+    if (value > 50) {
         return (1, value); // Monster
     } else {
         return (0, value); // Item
