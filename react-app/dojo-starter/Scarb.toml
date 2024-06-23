@@ -1,18 +1,18 @@
 [package]
-cairo-version = "2.5.4"
-name = "card_knight"
-version = "0.6.0"
+cairo-version = "2.6.3"
+name = "dojo_starter"
+version = "0.7.0"
 
 [cairo]
 sierra-replace-ids = true
 
 [scripts]
-migrate = "sozo build && sozo migrate plan && sozo migrate apply && ./scripts/default_auth.sh"
+migrate = "sozo build && sozo migrate apply"
 spawn = "./scripts/spawn.sh"
+move = "./scripts/move.sh"
 
 [dependencies]
-dojo = { git = "https://github.com/dojoengine/dojo", tag = "v0.7.2" }
-cubit = { git = "https://github.com/influenceth/cubit.git", rev = "9402f71"}
+dojo = { git = "https://github.com/dojoengine/dojo", tag = "v0.7.0" }
 
 [[target.dojo]]
 
@@ -22,12 +22,12 @@ initializer_class_hash = "0xbeef"
 [tool.dojo.env]
 rpc_url = "http://localhost:5050/"
 # Default account for katana with seed = 0
-account_address = "0x6162896d1d7ab204c7ccac6dd5f8e9e7c25ecd5ae4fcb4ad32e57786bb46e03"
-private_key = "0x1800000000300000180000000000030000000000003006001800006600"
-world_address = "0x467fddc55c6fb11704174a9498a3a11c4a1179bc8f313156ede9d325c33487"
+account_address = "0xb3ff441a68610b30fd5e2abbf3a1548eb6ba6f3559f2862bf2dc757e5828ca"
+private_key = "0x2bbf4f9fd0bbb2e60b0316c1fe0b76cf7a4d0198bd493ced9b8df2a3a24d68a"
+#world_address = "0xb4079627ebab1cd3cf9fd075dda1ad2454a7a448bf659591f259efa2519b18"  # Uncomment and update this line with your world address.
 
 [tool.dojo.world]
-name = "Card Knight"
+name = "Dojo starter"
 description = "The official Dojo Starter guide, the quickest and most streamlined way to get your Dojo Autonomous World up and running. This guide will assist you with the initial setup, from cloning the repository to deploying your world."
 cover_uri = "file://assets/cover.png"
 icon_uri = "file://assets/icon.png"

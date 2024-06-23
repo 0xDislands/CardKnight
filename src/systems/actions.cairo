@@ -3,8 +3,8 @@ use card_knight::models::{game::Direction};
 
 #[dojo::interface]
 trait IActions {
-    fn start_game(game_id: u32);
-    fn move(game_id: u32, direction: Direction);
+    fn start_game(ref world: IWorldDispatcher, game_id: u32);
+    fn move(ref world: IWorldDispatcher, game_id: u32, direction: Direction);
 }
 
 #[dojo::contract]
@@ -22,7 +22,7 @@ mod actions {
 
     #[abi(embed_v0)]
     impl PlayerActionsImpl of IActions<ContractState> {
-        fn start_game(world: IWorldDispatcher, game_id: u32) {
+        fn start_game(ref world: IWorldDispatcher, game_id: u32) {
             let player = get_caller_address();
             set!(world, (Game { game_id: game_id, player, highest_score: 0, game_state: GameState::Playing }));
 
@@ -65,7 +65,7 @@ mod actions {
                                     shield: 0,
                                     max_shield: 10,
                                     exp: 0,
-                                    level: 0,
+                                    level: 1,
                                     high_score: 0,
                                     sequence: 0,
                                 },
@@ -76,7 +76,7 @@ mod actions {
                     }
                     let (card_id, value) = monster_type_at_position(x, y);
                     if (MONSTER_COUNT > 0) {
-                        let monster_health: u32 = 2 ;
+                        let monster_health: u32 = 2;
                         set!(
                             world,
                             (
@@ -119,78 +119,84 @@ mod actions {
         }
 
 
-        // Will update assert  
-        fn move(world: IWorldDispatcher, game_id: u32, direction: Direction) {
+        // Will update assert 
+        fn move(ref world: IWorldDispatcher, game_id: u32, direction: Direction) {
             let player_address = get_caller_address();
             let mut player = get!(world, (game_id, player_address),(Player));
             let old_player_card = get!(world, (game_id, player.x, player.y), (Card));
             // delete!(world, (old_player_card));
             let (next_x, next_y) = match direction {
                 Direction::Up => {
+                    println!("Moving up");
                     (player.x, player.y + 1)
                 },
                 Direction::Down => {
-                    assert!(player.y > 0, "Invalid move");
+                    println!("Moving down");
                     (player.x, player.y - 1)
                 },
                 Direction::Left => {
-                    assert!(player.x > 0, "Invalid move");
+                    println!("Moving left");
                     (player.x - 1, player.y)
                 },
-                Direction::Right => (player.x + 1, player.y)
+                Direction::Right => {
+                    println!("Moving right");
+                    (player.x + 1, player.y)
+                }
             };
-            assert!(ICardImpl::is_inside(next_x, next_y), "Invalid move");
+            assert!(ICardImpl::is_inside(next_x, next_y) == true, "Invalid move");
             let existingCard = get!(world, (game_id, next_x, next_y), (Card));
             // Apply Effect was made to handle all kind of card => update apply_effect when more cases are added
             let result = ICardImpl::apply_effect(player, existingCard);
             player = result;
-            player.x = existingCard.x;
-            player.y = existingCard.y;
             // delete!(world, (existingCard));
             let new_player_card = Card {
                 game_id,
-                x: player.x,
-                y: player.y,
+                x: next_x,
+                y: existingCard.y,
                 card_id: CardIdEnum::Player,
                 hp: player.hp,
                 max_hp: player.max_hp,
                 shield: player.shield,
                 max_shield: player.max_shield,
             };
-            set!(world, (new_player_card));
-            set!(world, (player));
-            let moveCard = ICardImpl::get_move_cards(world, game_id, player.x, player.y, player);
+
+            // Move cards after use
+            let moveCard = ICardImpl::get_move_card(world, game_id, existingCard.x, existingCard.y, player);
             let mut moveCard_x = moveCard.x;
             let mut moveCard_y = moveCard.y;
             if (ICardImpl::is_corner(player)) {
                 let mut x_destination = player.x;
                 let mut y_destination = player.y;
-                let x_direction = player.x - moveCard.x;
-                let y_direction = player.y - moveCard.y;
+                let x_direction = player.x - moveCard_x;
+                let y_direction = player.y - moveCard_y;
                 while true { 
-                    let old_x = x_destination - x_direction;
-                    let old_y = y_destination - y_direction;
-                    println!("old_x: {}, old_y: {}", old_x, old_y);
-                    if !ICardImpl::is_inside(old_x, old_y) {
-                        println!("break");
-                        break;
-                    }
-                    else {
+                    println!("Calculating old_x & old_y");
+                    let old_x = if x_direction <= x_destination { x_destination - x_direction } else { break; };
+                    let old_y = if y_direction <= y_destination { y_destination - y_direction } else { break; };
+                    if ICardImpl::is_inside(old_x, old_y) {
                         let card = get!(world, (game_id, old_x, old_y), (Card));
-                        ICardImpl::move_to_position(world, game_id, card.x, card.y, x_destination, y_destination);
+                        let card_move = ICardImpl::move_to_position(world, game_id, card, x_destination, y_destination);
+                        set!(world, (card_move));
                         x_destination = old_x;
                         y_destination = old_y;
+                    }
+                    else {
+                        break;
                     }
                 };
                 moveCard_x = x_destination;
                 moveCard_y = y_destination;
             }
             else {
-                ICardImpl::move_to_position(world, game_id, moveCard_x, moveCard_y, existingCard.x, existingCard.y);
+                let card_move = ICardImpl::move_to_position(world, game_id, moveCard, old_player_card.x, old_player_card.y);
+                set!(world, (card_move));
             }
-
             // spawn new card at the end of the move
             ICardImpl::spawn_card(world, game_id, moveCard_x, moveCard_y, player);
+            set!(world, (new_player_card));
+            player.x = existingCard.x;
+            player.y = existingCard.y;
+            set!(world, (player));
         }
 
     }

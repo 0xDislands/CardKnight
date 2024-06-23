@@ -4,6 +4,7 @@ use starknet::ContractAddress;
 
 use dojo::world::{IWorld, IWorldDispatcher, IWorldDispatcherTrait};
 use card_knight::config::card::{MONSTER1_BASE_HP, MONSTER1_MULTIPLE, MONSTER2_BASE_HP, MONSTER2_MULTIPLE, MONSTER3_BASE_HP, MONSTER3_MULTIPLE};
+use card_knight::config::map::X_RANGE;
 
 #[derive(Copy, Drop, Serde, PartialEq)]
 #[dojo::model]
@@ -21,25 +22,33 @@ struct Card {
     max_shield: u32,
 }
 
+#[derive(Drop, Serde)]
+#[dojo::model]
+struct DirectionsAvailable {
+    #[key]
+    player: ContractAddress,
+    directions: Array<Direction>,
+}
+
 #[generate_trait]
 impl ICardImpl of ICardTrait {
     fn apply_effect(mut player: Player, card: Card) -> Player {
         match card.card_id {
             CardIdEnum::Player => { return player; },
             CardIdEnum::Monster1 => {
-                // let mut damage = card.hp;
-                // if (player.shield > 0) {
-                //     if (player.shield - damage <= 0) {
-                //         damage -= player.shield;
-                //         player.shield = 0;
-                //         player.hp -= damage;
-                //     } else {
-                //         player.shield -= damage;
-                //     };
-                // } else {
-                //     // if remain_hp <= 0 ## This WILL BE WRITTEN WHEN MOVEMENT LOGIC IS FINISHED
-                //     player.hp = player.hp - card.hp;
-                // };
+                let mut damage = card.hp;
+                if (player.shield > 0) {
+                    if (player.shield - damage <= 0) {
+                        damage -= player.shield;
+                        player.shield = 0;
+                        player.hp -= damage;
+                    } else {
+                        player.shield -= damage;
+                    };
+                } else {
+                    // if remain_hp <= 0 ## This WILL BE WRITTEN WHEN MOVEMENT LOGIC IS FINISHED
+                    player.hp = player.hp - card.hp;
+                };
                 return player;
             },
             CardIdEnum::Monster2 => {
@@ -94,8 +103,10 @@ impl ICardImpl of ICardTrait {
     }
 
     fn is_inside(x: u32, y: u32) -> bool {
-        let WIDTH: u32 = 3; // 3x3 map
-        if x <= WIDTH && y <= WIDTH {
+        let map_size = 2;
+        let x_cond: bool = (x >= 0) && (x <= map_size);
+        let y_cond: bool = (y >= 0) && (y <= map_size);
+        if x_cond && y_cond {
             return true;
         } else {
             return false;
@@ -103,12 +114,11 @@ impl ICardImpl of ICardTrait {
     }
 
     fn move_to_position(
-        world: IWorldDispatcher, game_id: u32, old_x: u32, old_y: u32, new_x: u32, new_y: u32
-    ) {
-        let mut card = get!(world, (game_id, old_x, old_y), (Card));
-        card.x = new_x;
-        card.y = new_y;
-        set!(world, (card));
+        world: IWorldDispatcher, game_id: u32, mut old_card: Card, new_x: u32, new_y: u32
+    ) -> Card {
+        old_card.x = new_x;
+        old_card.y = new_y;
+        return old_card;
     }
 
     // Temporarily use custom fn to get_neighbour_cards ,
@@ -137,7 +147,7 @@ impl ICardImpl of ICardTrait {
         return neighbour_card;
     }
 
-    fn get_move_cards(
+    fn get_move_card(
         world: IWorldDispatcher, game_id: u32, x: u32, y: u32, player: Player
     ) -> Card {
         let card = get!(world, (game_id, x, y), (Card));
