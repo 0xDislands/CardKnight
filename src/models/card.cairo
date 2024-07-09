@@ -4,7 +4,7 @@ use starknet::ContractAddress;
 
 use dojo::world::{IWorld, IWorldDispatcher, IWorldDispatcherTrait};
 use card_knight::config::card::{MONSTER1_BASE_HP, MONSTER1_MULTIPLE, MONSTER2_BASE_HP, MONSTER2_MULTIPLE, MONSTER3_BASE_HP, MONSTER3_MULTIPLE};
-use card_knight::config::map::X_RANGE;
+use card_knight::config::map::{MAP_RANGE};
 
 #[derive(Copy, Drop, Serde, PartialEq)]
 #[dojo::model]
@@ -103,15 +103,34 @@ impl ICardImpl of ICardTrait {
     }
 
     fn is_inside(x: u32, y: u32) -> bool {
-        let map_size = 2;
-        let x_cond: bool = (x >= 0) && (x <= map_size);
-        let y_cond: bool = (y >= 0) && (y <= map_size);
+
+        let x_cond: bool = (x <= MAP_RANGE);
+        let y_cond: bool = (y <= MAP_RANGE);
         if x_cond && y_cond {
             return true;
         } else {
             return false;
         }
     }
+
+    fn is_move_inside(move:Direction,x: u32, y: u32) -> bool {
+
+         match move {
+                Direction::Up => {
+                    MAP_RANGE >= y + 1
+                },
+                Direction::Down => {
+                    y>0
+                },
+                Direction::Left => {
+                    x>0
+                },
+                Direction::Right => {
+                MAP_RANGE >= x + 1
+                }
+            }
+    }
+
 
     fn move_to_position(
         world: IWorldDispatcher, game_id: u32, mut old_card: Card, new_x: u32, new_y: u32
@@ -127,34 +146,67 @@ impl ICardImpl of ICardTrait {
     // which might caused by mismatch data type
     fn get_neighbour_card(
         world: IWorldDispatcher, game_id: u32, mut x: u32, mut y: u32, direction: Direction
-    ) -> Card {
+    ) -> (bool, Card ){
         let mut neighbour_card = get!(world, (game_id, x, y), (Card)); // dummy
-        match direction {
-            Direction::Up(()) => { if Self::is_inside(x, y + 1) {
-                neighbour_card.y += 1;
-            }; },
-            Direction::Down(()) => { if Self::is_inside(x, y - 1) {
-                neighbour_card.y -= 1;
-            }; },
-            Direction::Left(()) => { if Self::is_inside(x - 1, y) {
-                neighbour_card.x -= 1;
-            }; },
-            Direction::Right(()) => { if Self::is_inside(x + 1, y) {
-                neighbour_card.x += 1;
-            }; }
+        let mut is_inside= Self::is_move_inside(direction, x, y );
+
+        if (!is_inside){
+            return    (is_inside,neighbour_card );
         }
 
-        return neighbour_card;
+        match direction {
+            Direction::Up(()) =>  {
+                neighbour_card = get!(world, (game_id, x, y+1), (Card));
+            },
+            Direction::Down(()) => {
+                neighbour_card = get!(world, (game_id, x, y-1), (Card));
+            },
+            Direction::Left(()) => { 
+                neighbour_card = get!(world, (game_id, x-1, y), (Card));
+
+             },
+            Direction::Right(()) => {
+                neighbour_card = get!(world, (game_id, x+1, y), (Card));
+            }
+        }
+        (is_inside,neighbour_card )
     }
+
 
     fn get_move_card(
         world: IWorldDispatcher, game_id: u32, x: u32, y: u32, player: Player
     ) -> Card {
         let card = get!(world, (game_id, x, y), (Card));
-        let direction_x = card.x - player.x;
-        let direction_y = card.y - player.y;
-        let straightGrid_x = player.x - direction_x;
-        let straightGrid_y = player.y - direction_y;
+
+        let mut straightGrid_x=0;
+        let mut straightGrid_y=0;
+
+        if (card.x >= player.x ){
+            let direction_x = card.x - player.x;
+            if ( player.x >= direction_x){
+                straightGrid_x=player.x - direction_x;
+            }else{
+                straightGrid_x=MAP_RANGE +1;
+            }
+
+        }else{
+            let direction_x =  player.x-card.x ;
+            straightGrid_x = player.x + direction_x;
+        }
+
+        if (card.y >= player.y ){
+            let direction_y = card.y - player.y;
+            if ( player.y >= direction_y){
+                straightGrid_y=player.y - direction_y;
+            }else{
+                straightGrid_y=MAP_RANGE +1;
+            }
+
+        }else{
+            let direction_y =  player.y-card.y ;
+            straightGrid_y = player.y + direction_y;
+        }
+       
 
         if Self::is_inside(straightGrid_x, straightGrid_y) {
             return get!(world, (game_id, straightGrid_x, straightGrid_y), (Card));
@@ -163,51 +215,63 @@ impl ICardImpl of ICardTrait {
         let mut neighbour_cards: @Array<Card> = {
             let mut arr: Array<Card> = ArrayTrait::new();
 
-            let neighbour_up = Self::get_neighbour_card(world, game_id, x, y, Direction::Up);
-            let neighbour_down = Self::get_neighbour_card(world, game_id, x, y, Direction::Down);
-            let neighbour_left = Self::get_neighbour_card(world, game_id, x, y, Direction::Left);
-            let neighbour_right = Self::get_neighbour_card(world, game_id, x, y, Direction::Right);
+            let (isInsideU ,neighbour_up) = Self::get_neighbour_card(world, game_id, x, y, Direction::Up);
+            let (isInsideD ,neighbour_down) = Self::get_neighbour_card(world, game_id, x, y, Direction::Down);
+            let (isInsideL ,neighbour_left) = Self::get_neighbour_card(world, game_id, x, y, Direction::Left);
+            let (isInsideR ,neighbour_right) = Self::get_neighbour_card(world, game_id, x, y, Direction::Right);
 
-            if Self::is_inside(neighbour_up.x, neighbour_up.y) && neighbour_up != card {
+            if isInsideU {
                 arr.append(neighbour_up);
             }
-            if Self::is_inside(neighbour_down.x, neighbour_down.y) && neighbour_down != card {
+            if isInsideD {
                 arr.append(neighbour_down);
             }
-            if Self::is_inside(neighbour_left.x, neighbour_left.y) && neighbour_left != card {
+            if isInsideL {
                 arr.append(neighbour_left);
             }
-            if Self::is_inside(neighbour_right.x, neighbour_right.y) && neighbour_right != card {
+            if isInsideR {
                 arr.append(neighbour_right);
             }
-
             @arr
         };
-
+        
         let arr_len = neighbour_cards.len();
 
         if arr_len == 1 {
             return *(neighbour_cards.at(0));
         };
-
+        
         if (card.x == player.x) {
             if (card.y < player.y) {
                 let mut i = 0;
                 loop {
-                    if *(neighbour_cards.at(i)).x < player.x {
-                        break *(neighbour_cards.at(i));
+                    if (arr_len==i){
+                        break i;
+                    }
+
+                    if *(neighbour_cards.at(i)).x > player.x {
+                         break i;
                     }
                     i += 1;
                 };
+                if (i!=arr_len){
+                    return(*(neighbour_cards.at(i)));
+                }
             }
             if (card.y > player.y) {
                 let mut i = 0;
                 loop {
+                 if (arr_len==i){
+                        break i;
+                    }
                     if *(neighbour_cards.at(i)).x < player.x {
-                        break *(neighbour_cards.at(i));
+                        break i;
                     }
                     i += 1;
                 };
+                if (i!=arr_len){
+                    return(*(neighbour_cards.at(i)));
+                }
             }
         }
 
@@ -215,30 +279,40 @@ impl ICardImpl of ICardTrait {
             if (card.x > player.x) {
                 let mut i = 0;
                 loop {
+                    if (arr_len==i){
+                        break i;
+                    }
                     if *(neighbour_cards.at(i)).y > player.y {
-                        break *(neighbour_cards.at(i));
+                        break i;
                     }
                     i += 1;
                 };
+                if (i!=arr_len){
+                    return(*(neighbour_cards.at(i)));
+                }
             }
             if (card.x < player.x) {
                 let mut i = 0;
                 loop {
+                    if (arr_len==i){
+                        break i;
+                    }
                     if *(neighbour_cards.at(i)).y < player.y {
-                        break *(neighbour_cards.at(i));
+                        break i;
                     }
                     i += 1;
                 };
+                 if (i!=arr_len){
+                    return(*(neighbour_cards.at(i)));
+                }
             }
         }
+        // get random  inside neighbour_cards
+        let random=(x+3)* (y+5)*7;
+        let randomIndex= random - (random/arr_len)*arr_len;
+        *(neighbour_cards.at(randomIndex))
 
-        return get!(world, (game_id, x, y), (Card));
 
-        if Self::is_inside(straightGrid_x, straightGrid_y) {
-            return get!(world, (game_id, x, y), (Card));
-        } else {
-            return get!(world, (game_id, x, y), (Card));
-        }
     }
 
     fn spawn_card(world: IWorldDispatcher, game_id: u32, x: u32, y: u32, player: Player) {

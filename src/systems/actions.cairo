@@ -122,7 +122,7 @@ mod actions {
         // Will update assert 
         fn move(ref world: IWorldDispatcher, game_id: u32, direction: Direction) {
             let player_address = get_caller_address();
-            let mut player = get!(world, (game_id, player_address),(Player));
+            let mut player = get!(world, (game_id, player_address), (Player));
             let old_player_card = get!(world, (game_id, player.x, player.y), (Card));
             // delete!(world, (old_player_card));
             let (next_x, next_y) = match direction {
@@ -131,10 +131,12 @@ mod actions {
                     (player.x, player.y + 1)
                 },
                 Direction::Down => {
+                    assert!(player.y != 0, "Invalid move");
                     println!("Moving down");
                     (player.x, player.y - 1)
                 },
                 Direction::Left => {
+                    assert!(player.x != 0, "Invalid move");
                     println!("Moving left");
                     (player.x - 1, player.y)
                 },
@@ -161,7 +163,9 @@ mod actions {
             };
 
             // Move cards after use
-            let moveCard = ICardImpl::get_move_card(world, game_id, existingCard.x, existingCard.y, player);
+            let moveCard = ICardImpl::get_move_card(
+                world, game_id, existingCard.x, existingCard.y, player
+            );
             let mut moveCard_x = moveCard.x;
             let mut moveCard_y = moveCard.y;
             if (ICardImpl::is_corner(player)) {
