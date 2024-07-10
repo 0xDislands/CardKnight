@@ -3,7 +3,10 @@ use card_knight::models::game::Direction;
 use starknet::ContractAddress;
 
 use dojo::world::{IWorld, IWorldDispatcher, IWorldDispatcherTrait};
-use card_knight::config::card::{MONSTER1_BASE_HP, MONSTER1_MULTIPLE, MONSTER2_BASE_HP, MONSTER2_MULTIPLE, MONSTER3_BASE_HP, MONSTER3_MULTIPLE};
+use card_knight::config::card::{
+    MONSTER1_BASE_HP, MONSTER1_MULTIPLE, MONSTER2_BASE_HP, MONSTER2_MULTIPLE, MONSTER3_BASE_HP,
+    MONSTER3_MULTIPLE
+};
 use card_knight::config::map::{MAP_RANGE};
 
 #[derive(Copy, Drop, Serde, PartialEq)]
@@ -36,39 +39,63 @@ impl ICardImpl of ICardTrait {
         match card.card_id {
             CardIdEnum::Player => { return player; },
             CardIdEnum::Monster1 => {
-                let mut damage = card.hp;
-                if (player.shield > 0) {
-                    if (player.shield - damage <= 0) {
-                        damage -= player.shield;
-                        player.shield = 0;
-                        player.hp -= damage;
-                    } else {
-                        player.shield -= damage;
-                    };
-                } else {
-                    // if remain_hp <= 0 ## This WILL BE WRITTEN WHEN MOVEMENT LOGIC IS FINISHED
-                    player.hp = player.hp - card.hp;
-                };
+                let (hp_, shield_) = Self::get_battle_hp_shield(player.hp, player.shield, card.hp);
+                player.hp = hp_;
+                player.shield = shield_;
+                if (player.hp == 0) {
+                    player.alive = false;
+                }
                 return player;
             },
             CardIdEnum::Monster2 => {
                 // Handle Monster2 case
+                let (hp_, shield_) = Self::get_battle_hp_shield(player.hp, player.shield, card.hp);
+                player.hp = hp_;
+                player.shield = shield_;
+                if (player.hp == 0) {
+                    player.alive = false;
+                }
                 return player;
             },
             CardIdEnum::Monster3 => {
                 // Handle Monster3 case
+                let (hp_, shield_) = Self::get_battle_hp_shield(player.hp, player.shield, card.hp);
+                player.hp = hp_;
+                player.shield = shield_;
+                if (player.hp == 0) {
+                    player.alive = false;
+                }
                 return player;
             },
             CardIdEnum::Boss1 => {
-                // Handle Boss1 case
+                let damage = card.hp + card.shield;
+                let (hp_, shield_) = Self::get_battle_hp_shield(player.hp, player.shield, damage);
+                player.hp = hp_;
+                player.shield = shield_;
+                if (player.hp == 0) {
+                    player.alive = false;
+                }
                 return player;
             },
             CardIdEnum::ItemHeal => {
-                // Handle ItemHeal case
+                player
+                    .hp =
+                        if (player.hp + card.hp > player.max_hp) {
+                            player.max_hp
+                        } else {
+                            player.hp + card.hp
+                        };
                 return player;
             },
             CardIdEnum::ItemPoison => {
-                // Handle ItemPoison case
+                player.hp = if (player.hp > card.hp) {
+                    player.hp - card.hp
+                } else {
+                    0
+                };
+                if (player.hp == 0) {
+                    player.alive = false;
+                }
                 return player;
             },
             CardIdEnum::ItemChest => {
@@ -84,7 +111,13 @@ impl ICardImpl of ICardTrait {
                 return player;
             },
             CardIdEnum::ItemShield => {
-                // Handle ItemShield case
+                player
+                    .hp =
+                        if (player.shield + card.shield > player.max_shield) {
+                            player.max_shield
+                        } else {
+                            player.shield + card.shield
+                        };
                 return player;
             },
             CardIdEnum::SkillFire => {
@@ -94,8 +127,28 @@ impl ICardImpl of ICardTrait {
         }
     }
 
+    fn get_battle_hp_shield(mut hp: u32, mut shield: u32, mut damage: u32) -> (u32, u32) {
+        if (shield > 0) {
+            if (shield <= damage) {
+                damage -= shield;
+                shield = 0;
+            } else {
+                damage = 0;
+                shield -= damage;
+            };
+        }
+        hp = if (hp < damage) {
+            0
+        } else {
+            hp - damage
+        };
+
+        (hp, shield)
+    }
+
+
     fn is_corner(player: Player) -> bool {
-        if player.x == 2 || player.y == 2 || player.x == 0 || player.y == 0 {
+        if player.x == MAP_RANGE || player.y == MAP_RANGE || player.x == 0 || player.y == 0 {
             return true;
         } else {
             return false;
@@ -103,7 +156,6 @@ impl ICardImpl of ICardTrait {
     }
 
     fn is_inside(x: u32, y: u32) -> bool {
-
         let x_cond: bool = (x <= MAP_RANGE);
         let y_cond: bool = (y <= MAP_RANGE);
         if x_cond && y_cond {
@@ -113,22 +165,13 @@ impl ICardImpl of ICardTrait {
         }
     }
 
-    fn is_move_inside(move:Direction,x: u32, y: u32) -> bool {
-
-         match move {
-                Direction::Up => {
-                    MAP_RANGE >= y + 1
-                },
-                Direction::Down => {
-                    y>0
-                },
-                Direction::Left => {
-                    x>0
-                },
-                Direction::Right => {
-                MAP_RANGE >= x + 1
-                }
-            }
+    fn is_move_inside(move: Direction, x: u32, y: u32) -> bool {
+        match move {
+            Direction::Up => { MAP_RANGE >= y + 1 },
+            Direction::Down => { y > 0 },
+            Direction::Left => { x > 0 },
+            Direction::Right => { MAP_RANGE >= x + 1 }
+        }
     }
 
 
@@ -146,30 +189,21 @@ impl ICardImpl of ICardTrait {
     // which might caused by mismatch data type
     fn get_neighbour_card(
         world: IWorldDispatcher, game_id: u32, mut x: u32, mut y: u32, direction: Direction
-    ) -> (bool, Card ){
+    ) -> (bool, Card) {
         let mut neighbour_card = get!(world, (game_id, x, y), (Card)); // dummy
-        let mut is_inside= Self::is_move_inside(direction, x, y );
+        let mut is_inside = Self::is_move_inside(direction, x, y);
 
-        if (!is_inside){
-            return    (is_inside,neighbour_card );
+        if (!is_inside) {
+            return (is_inside, neighbour_card);
         }
 
         match direction {
-            Direction::Up(()) =>  {
-                neighbour_card = get!(world, (game_id, x, y+1), (Card));
-            },
-            Direction::Down(()) => {
-                neighbour_card = get!(world, (game_id, x, y-1), (Card));
-            },
-            Direction::Left(()) => { 
-                neighbour_card = get!(world, (game_id, x-1, y), (Card));
-
-             },
-            Direction::Right(()) => {
-                neighbour_card = get!(world, (game_id, x+1, y), (Card));
-            }
+            Direction::Up(()) => { neighbour_card = get!(world, (game_id, x, y + 1), (Card)); },
+            Direction::Down(()) => { neighbour_card = get!(world, (game_id, x, y - 1), (Card)); },
+            Direction::Left(()) => { neighbour_card = get!(world, (game_id, x - 1, y), (Card)); },
+            Direction::Right(()) => { neighbour_card = get!(world, (game_id, x + 1, y), (Card)); }
         }
-        (is_inside,neighbour_card )
+        (is_inside, neighbour_card)
     }
 
 
@@ -178,35 +212,32 @@ impl ICardImpl of ICardTrait {
     ) -> Card {
         let card = get!(world, (game_id, x, y), (Card));
 
-        let mut straightGrid_x=0;
-        let mut straightGrid_y=0;
+        let mut straightGrid_x = 0;
+        let mut straightGrid_y = 0;
 
-        if (card.x >= player.x ){
+        if (card.x >= player.x) {
             let direction_x = card.x - player.x;
-            if ( player.x >= direction_x){
-                straightGrid_x=player.x - direction_x;
-            }else{
-                straightGrid_x=MAP_RANGE +1;
+            if (player.x >= direction_x) {
+                straightGrid_x = player.x - direction_x;
+            } else {
+                straightGrid_x = MAP_RANGE + 1;
             }
-
-        }else{
-            let direction_x =  player.x-card.x ;
+        } else {
+            let direction_x = player.x - card.x;
             straightGrid_x = player.x + direction_x;
         }
 
-        if (card.y >= player.y ){
+        if (card.y >= player.y) {
             let direction_y = card.y - player.y;
-            if ( player.y >= direction_y){
-                straightGrid_y=player.y - direction_y;
-            }else{
-                straightGrid_y=MAP_RANGE +1;
+            if (player.y >= direction_y) {
+                straightGrid_y = player.y - direction_y;
+            } else {
+                straightGrid_y = MAP_RANGE + 1;
             }
-
-        }else{
-            let direction_y =  player.y-card.y ;
+        } else {
+            let direction_y = player.y - card.y;
             straightGrid_y = player.y + direction_y;
         }
-       
 
         if Self::is_inside(straightGrid_x, straightGrid_y) {
             return get!(world, (game_id, straightGrid_x, straightGrid_y), (Card));
@@ -215,10 +246,18 @@ impl ICardImpl of ICardTrait {
         let mut neighbour_cards: @Array<Card> = {
             let mut arr: Array<Card> = ArrayTrait::new();
 
-            let (isInsideU ,neighbour_up) = Self::get_neighbour_card(world, game_id, x, y, Direction::Up);
-            let (isInsideD ,neighbour_down) = Self::get_neighbour_card(world, game_id, x, y, Direction::Down);
-            let (isInsideL ,neighbour_left) = Self::get_neighbour_card(world, game_id, x, y, Direction::Left);
-            let (isInsideR ,neighbour_right) = Self::get_neighbour_card(world, game_id, x, y, Direction::Right);
+            let (isInsideU, neighbour_up) = Self::get_neighbour_card(
+                world, game_id, x, y, Direction::Up
+            );
+            let (isInsideD, neighbour_down) = Self::get_neighbour_card(
+                world, game_id, x, y, Direction::Down
+            );
+            let (isInsideL, neighbour_left) = Self::get_neighbour_card(
+                world, game_id, x, y, Direction::Left
+            );
+            let (isInsideR, neighbour_right) = Self::get_neighbour_card(
+                world, game_id, x, y, Direction::Right
+            );
 
             if isInsideU {
                 arr.append(neighbour_up);
@@ -234,34 +273,34 @@ impl ICardImpl of ICardTrait {
             }
             @arr
         };
-        
+
         let arr_len = neighbour_cards.len();
 
         if arr_len == 1 {
             return *(neighbour_cards.at(0));
         };
-        
+
         if (card.x == player.x) {
             if (card.y < player.y) {
                 let mut i = 0;
                 loop {
-                    if (arr_len==i){
+                    if (arr_len == i) {
                         break i;
                     }
 
                     if *(neighbour_cards.at(i)).x > player.x {
-                         break i;
+                        break i;
                     }
                     i += 1;
                 };
-                if (i!=arr_len){
-                    return(*(neighbour_cards.at(i)));
+                if (i != arr_len) {
+                    return (*(neighbour_cards.at(i)));
                 }
             }
             if (card.y > player.y) {
                 let mut i = 0;
                 loop {
-                 if (arr_len==i){
+                    if (arr_len == i) {
                         break i;
                     }
                     if *(neighbour_cards.at(i)).x < player.x {
@@ -269,8 +308,8 @@ impl ICardImpl of ICardTrait {
                     }
                     i += 1;
                 };
-                if (i!=arr_len){
-                    return(*(neighbour_cards.at(i)));
+                if (i != arr_len) {
+                    return (*(neighbour_cards.at(i)));
                 }
             }
         }
@@ -279,7 +318,7 @@ impl ICardImpl of ICardTrait {
             if (card.x > player.x) {
                 let mut i = 0;
                 loop {
-                    if (arr_len==i){
+                    if (arr_len == i) {
                         break i;
                     }
                     if *(neighbour_cards.at(i)).y > player.y {
@@ -287,14 +326,14 @@ impl ICardImpl of ICardTrait {
                     }
                     i += 1;
                 };
-                if (i!=arr_len){
-                    return(*(neighbour_cards.at(i)));
+                if (i != arr_len) {
+                    return (*(neighbour_cards.at(i)));
                 }
             }
             if (card.x < player.x) {
                 let mut i = 0;
                 loop {
-                    if (arr_len==i){
+                    if (arr_len == i) {
                         break i;
                     }
                     if *(neighbour_cards.at(i)).y < player.y {
@@ -302,17 +341,15 @@ impl ICardImpl of ICardTrait {
                     }
                     i += 1;
                 };
-                 if (i!=arr_len){
-                    return(*(neighbour_cards.at(i)));
+                if (i != arr_len) {
+                    return (*(neighbour_cards.at(i)));
                 }
             }
         }
         // get random  inside neighbour_cards
-        let random=(x+3)* (y+5)*7;
-        let randomIndex= random - (random/arr_len)*arr_len;
+        let random = (x + 3) * (y + 5) * 7;
+        let randomIndex = random - (random / arr_len) * arr_len;
         *(neighbour_cards.at(randomIndex))
-
-
     }
 
     fn spawn_card(world: IWorldDispatcher, game_id: u32, x: u32, y: u32, player: Player) {
@@ -352,15 +389,9 @@ impl ICardImpl of ICardTrait {
         let max_hp = {
             match card_id {
                 CardIdEnum::Player => 0,
-                CardIdEnum::Monster1 => {
-                    player.level * MONSTER1_BASE_HP * MONSTER1_MULTIPLE
-                },
-                CardIdEnum::Monster2 => {
-                    player.level * MONSTER2_BASE_HP * MONSTER2_MULTIPLE
-                },
-                CardIdEnum::Monster3 => {
-                    player.level * MONSTER3_BASE_HP * MONSTER3_MULTIPLE
-                },
+                CardIdEnum::Monster1 => { player.level * MONSTER1_BASE_HP * MONSTER1_MULTIPLE },
+                CardIdEnum::Monster2 => { player.level * MONSTER2_BASE_HP * MONSTER2_MULTIPLE },
+                CardIdEnum::Monster3 => { player.level * MONSTER3_BASE_HP * MONSTER3_MULTIPLE },
                 CardIdEnum::Boss1 => 40,
                 CardIdEnum::ItemHeal => 0,
                 CardIdEnum::ItemPoison => 0,

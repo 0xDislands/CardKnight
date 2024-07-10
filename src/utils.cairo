@@ -5,8 +5,7 @@ use integer::{u128s_from_felt252, U128sFromFelt252Result, u128_safe_divmod};
 use card_knight::config::{map::{X_RANGE, Y_RANGE, MAP_AMPLITUDE}};
 
 use card_knight::models::{
-    game::{Game, Direction}, 
-    card::{Card, CardIdEnum, ICardImpl},
+    game::{Game, Direction}, card::{Card, CardIdEnum, ICardImpl},
     player::{Player, IPlayerImpl, LevelUpOptions}
 };
 
@@ -17,12 +16,11 @@ use cubit::f64::types::vec3::Vec3Trait;
 fn spawn_coords(player: ContractAddress, mut salt: u32) -> (u32, u32) {
     let player: felt252 = player.into();
     let salt: felt252 = salt.into();
-    let mut x = 10;
-    let mut y = 10;
+
     let hash = pedersen::pedersen(player, salt);
     let rnd_seed = match u128s_from_felt252(hash) {
-            U128sFromFelt252Result::Narrow(low) => low,
-            U128sFromFelt252Result::Wide((high, low)) => low,
+        U128sFromFelt252Result::Narrow(low) => low,
+        U128sFromFelt252Result::Wide((high, low)) => low,
     };
     let (rnd_seed, x_) = u128_safe_divmod(rnd_seed, X_RANGE.try_into().unwrap());
     let (rnd_seed, y_) = u128_safe_divmod(rnd_seed, Y_RANGE.try_into().unwrap());
@@ -96,14 +94,12 @@ fn get_level_up_options(x: u32, y: u32, sequence: u32) -> Array<LevelUpOptions> 
         options.append(LevelUpOptions::IncreaseMaxHp);
         options.append(LevelUpOptions::AddHp);
         return options;
-    }
-    else if (value > 80 && value < 100) {
+    } else if (value > 80 && value < 100) {
         let mut options = ArrayTrait::new();
         options.append(LevelUpOptions::AddArmour);
         options.append(LevelUpOptions::AddHp);
         return options;
-    }
-    else {
+    } else {
         let mut options = ArrayTrait::new();
         options.append(LevelUpOptions::IncreaseMaxHp);
         options.append(LevelUpOptions::AddHp);

@@ -19,26 +19,18 @@ struct Player {
     level: u32,
     high_score: u32,
     sequence: u32,
+    alive: bool
 }
 
 #[generate_trait]
 impl IPlayerImpl of IPlayer {
-
     fn level_up(world: IWorldDispatcher, player: Player, option: LevelUpOptions) {
         let mut new_player = player;
         match option {
-            LevelUpOptions::IncreaseMaxHp => {
-                new_player.max_hp += 1;
-            },
-            LevelUpOptions::AddHp => {
-                new_player.hp += 1;
-            },
-            LevelUpOptions::IncreaseMaxArmour => {
-                new_player.max_shield += 1;
-            },
-            LevelUpOptions::AddArmour => {
-                new_player.shield += 1;
-            }
+            LevelUpOptions::IncreaseMaxHp => { new_player.max_hp += 1; },
+            LevelUpOptions::AddHp => { new_player.hp += 1; },
+            LevelUpOptions::IncreaseMaxArmour => { new_player.max_shield += 1; },
+            LevelUpOptions::AddArmour => { new_player.shield += 1; }
         }
         set!(world, (new_player));
     }
