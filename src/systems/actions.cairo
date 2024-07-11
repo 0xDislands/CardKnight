@@ -1,10 +1,12 @@
 use starknet::ContractAddress;
-use card_knight::models::{game::Direction};
+use card_knight::models::game::{Direction};
+use card_knight::models::skill::{Skill, PlayerSkill};
 
 #[dojo::interface]
 trait IActions {
     fn start_game(ref world: IWorldDispatcher, game_id: u32);
     fn move(ref world: IWorldDispatcher, game_id: u32, direction: Direction);
+    fn use_skill(ref world: IWorldDispatcher, game_id: u32, skill: Skill);
 }
 
 #[dojo::contract]
@@ -14,11 +16,13 @@ mod actions {
         game::{Game, Direction, GameState}, card::{Card, CardIdEnum, ICardImpl, ICardTrait},
         player::Player
     };
+    use card_knight::models::skill::{Skill};
+
     use card_knight::utils::{spawn_coords, monster_type_at_position};
     use card_knight::config::{
         card::{
             MONSTER1_BASE_HP, MONSTER1_MULTIPLE, MONSTER2_BASE_HP, MONSTER2_MULTIPLE,
-            MONSTER3_BASE_HP, MONSTER3_MULTIPLE, HEAL_HP, SHIELD_HP
+            MONSTER3_BASE_HP, MONSTER3_MULTIPLE, HEAL_HP, SHIELD_HP, MONSTER1_XP, HEAL_XP
         },
         player::PLAYER_STARTING_POINT, level::{MONSTER_TO_START_WITH, ITEM_TO_START_WITH},
     };
@@ -61,7 +65,8 @@ mod actions {
                                     hp: 10,
                                     max_hp: 10,
                                     shield: 0,
-                                    max_shield: 10
+                                    max_shield: 10,
+                                    xp: 0,
                                 },
                             )
                         );
@@ -78,10 +83,12 @@ mod actions {
                                     shield: 0,
                                     max_shield: 10,
                                     exp: 0,
+                                    total_xp: 0,
                                     level: 1,
                                     high_score: 0,
                                     sequence: 0,
-                                    alive: true
+                                    alive: true,
+                                    turn: 0
                                 },
                             )
                         );
@@ -103,6 +110,7 @@ mod actions {
                                 max_hp: monster_health,
                                 shield: 0,
                                 max_shield: 0,
+                                xp: MONSTER1_XP,
                             })
                         );
                         MONSTER_COUNT -= 1;
@@ -118,6 +126,7 @@ mod actions {
                                 max_hp: value,
                                 shield: 0,
                                 max_shield: 0,
+                                xp: HEAL_XP,
                             })
                         );
                         ITEM_COUNT -= 1;
@@ -159,8 +168,16 @@ mod actions {
             assert!(ICardImpl::is_inside(next_x, next_y) == true, "Invalid move");
             let existingCard = get!(world, (game_id, next_x, next_y), (Card));
             // Apply Effect was made to handle all kind of card => update apply_effect when more cases are added
-            let result = ICardImpl::apply_effect(player, existingCard);
+            let result = ICardImpl::apply_effect(world, player, existingCard);
             player = result;
+
+            // if card is ItemChest dont change any position 
+            if (existingCard.card_id == CardIdEnum::ItemChest) {
+                player.turn += 1;
+                set!(world, (player));
+                return ();
+            };
+
             // delete!(world, (existingCard));
             let new_player_card = Card {
                 game_id,
@@ -171,6 +188,7 @@ mod actions {
                 max_hp: player.max_hp,
                 shield: player.shield,
                 max_shield: player.max_shield,
+                xp: 0
             };
 
             // Move cards after use
@@ -240,7 +258,17 @@ mod actions {
             set!(world, (new_player_card));
             player.x = existingCard.x;
             player.y = existingCard.y;
+            player.turn += 1;
             set!(world, (player));
+        }
+
+
+        fn use_skill(ref world: IWorldDispatcher, game_id: u32, skill: Skill) {
+            let player_address = get_caller_address();
+            let mut player = get!(world, (game_id, player_address), (Player));
+            //let mut  = get!(world, (game_id, player_address, skill), (PlayerSkill));
+
+            if (skill == Skill::SkillFire) {}
         }
     }
 }

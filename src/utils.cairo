@@ -20,10 +20,10 @@ fn spawn_coords(player: ContractAddress, mut salt: u32) -> (u32, u32) {
     let hash = pedersen::pedersen(player, salt);
     let rnd_seed = match u128s_from_felt252(hash) {
         U128sFromFelt252Result::Narrow(low) => low,
-        U128sFromFelt252Result::Wide((high, low)) => low,
+        U128sFromFelt252Result::Wide((_high, low)) => low,
     };
-    let (rnd_seed, x_) = u128_safe_divmod(rnd_seed, X_RANGE.try_into().unwrap());
-    let (rnd_seed, y_) = u128_safe_divmod(rnd_seed, Y_RANGE.try_into().unwrap());
+    let (_rnd_seed, x_) = u128_safe_divmod(rnd_seed, X_RANGE.try_into().unwrap());
+    let (_rnd_seed, y_) = u128_safe_divmod(rnd_seed, Y_RANGE.try_into().unwrap());
     let x_: u32 = x_.try_into().unwrap();
     let y_: u32 = y_.try_into().unwrap();
     return (x_, y_);
@@ -105,5 +105,29 @@ fn get_level_up_options(x: u32, y: u32, sequence: u32) -> Array<LevelUpOptions> 
         options.append(LevelUpOptions::AddHp);
         return options;
     }
+}
+
+
+fn random_index(x: u32, y: u32, max: u32) -> u32 {
+    let vec = Vec3Trait::new(
+        FixedTrait::from_felt(x.into()) / FixedTrait::from_felt(MAP_AMPLITUDE.into()),
+        FixedTrait::from_felt(0),
+        FixedTrait::from_felt(y.into()) / FixedTrait::from_felt(MAP_AMPLITUDE.into())
+    );
+
+    // compute simplex noise
+    let simplex_value = simplex3::noise(vec);
+
+    // compute the value between -1 and 1 to a value between 0 and 1
+    let fixed_value = (simplex_value + FixedTrait::from_unscaled_felt(1))
+        / FixedTrait::from_unscaled_felt(2);
+
+    // make it an integer between 0 and 100
+    let value: u32 = FixedTrait::floor(fixed_value * FixedTrait::from_unscaled_felt(100))
+        .try_into()
+        .unwrap();
+
+    let randomIndex = value - (value / max) * max;
+    randomIndex
 }
 

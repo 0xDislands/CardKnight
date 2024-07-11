@@ -1,13 +1,16 @@
-use card_knight::models::player::Player;
+use card_knight::models::player::IPlayer;
+use card_knight::models::player::{Player, IPlayerImpl};
 use card_knight::models::game::Direction;
 use starknet::ContractAddress;
 
 use dojo::world::{IWorld, IWorldDispatcher, IWorldDispatcherTrait};
 use card_knight::config::card::{
     MONSTER1_BASE_HP, MONSTER1_MULTIPLE, MONSTER2_BASE_HP, MONSTER2_MULTIPLE, MONSTER3_BASE_HP,
-    MONSTER3_MULTIPLE
+    MONSTER3_MULTIPLE, MONSTER1_XP, MONSTER2_XP, MONSTER3_XP, BOSS_XP, HEAL_XP, POISON_XP,
+    SHIELD_XP, CHEST_XP
 };
 use card_knight::config::map::{MAP_RANGE};
+use card_knight::utils::random_index;
 
 #[derive(Copy, Drop, Serde, PartialEq)]
 #[dojo::model]
@@ -23,6 +26,7 @@ struct Card {
     max_hp: u32,
     shield: u32,
     max_shield: u32,
+    xp: u32,
 }
 
 #[derive(Drop, Serde)]
@@ -35,79 +39,112 @@ struct DirectionsAvailable {
 
 #[generate_trait]
 impl ICardImpl of ICardTrait {
-    fn apply_effect(mut player: Player, card: Card) -> Player {
+    fn apply_effect(world: IWorldDispatcher, mut player: Player, card: Card) -> Player {
         match card.card_id {
             CardIdEnum::Player => { return player; },
             CardIdEnum::Monster1 => {
-                let (hp_, shield_) = Self::get_battle_hp_shield(player.hp, player.shield, card.hp);
-                player.hp = hp_;
-                player.shield = shield_;
-                if (player.hp == 0) {
-                    player.alive = false;
-                }
+                player.take_damage(card.hp);
+                player.add_exp(MONSTER1_XP);
                 return player;
             },
             CardIdEnum::Monster2 => {
                 // Handle Monster2 case
-                let (hp_, shield_) = Self::get_battle_hp_shield(player.hp, player.shield, card.hp);
-                player.hp = hp_;
-                player.shield = shield_;
-                if (player.hp == 0) {
-                    player.alive = false;
-                }
+                player.take_damage(card.hp);
+                player.add_exp(MONSTER2_XP);
                 return player;
             },
             CardIdEnum::Monster3 => {
                 // Handle Monster3 case
-                let (hp_, shield_) = Self::get_battle_hp_shield(player.hp, player.shield, card.hp);
-                player.hp = hp_;
-                player.shield = shield_;
-                if (player.hp == 0) {
-                    player.alive = false;
-                }
+                player.take_damage(card.hp);
+                player.add_exp(MONSTER3_XP);
                 return player;
             },
             CardIdEnum::Boss1 => {
                 let damage = card.hp + card.shield;
-                let (hp_, shield_) = Self::get_battle_hp_shield(player.hp, player.shield, damage);
-                player.hp = hp_;
-                player.shield = shield_;
-                if (player.hp == 0) {
-                    player.alive = false;
-                }
+                player.take_damage(damage);
+                player.add_exp(BOSS_XP);
                 return player;
             },
             CardIdEnum::ItemHeal => {
-                player
-                    .hp =
-                        if (player.hp + card.hp > player.max_hp) {
-                            player.max_hp
-                        } else {
-                            player.hp + card.hp
-                        };
+                player.heal(card.hp);
+                player.add_exp(HEAL_XP);
                 return player;
             },
             CardIdEnum::ItemPoison => {
-                player.hp = if (player.hp > card.hp) {
-                    player.hp - card.hp
-                } else {
-                    0
-                };
-                if (player.hp == 0) {
-                    player.alive = false;
-                }
+                player.take_damage(card.hp);
+                player.add_exp(POISON_XP);
                 return player;
             },
             CardIdEnum::ItemChest => {
                 // Handle ItemChest case
+                let index = random_index(player.hp + player.x + card.x, player.y + card.y, 3);
+                let card_value = random_index(
+                    player.hp + player.x + card.x, player.y + card.y, player.hp / 2
+                );
+
+                //  heal
+                if (index == 0) {
+                    let new_card = Card {
+                        game_id: card.game_id,
+                        x: card.x,
+                        y: card.y,
+                        card_id: CardIdEnum::ItemHeal,
+                        hp: card_value,
+                        max_hp: card_value,
+                        shield: 0,
+                        max_shield: 0,
+                        xp: HEAL_XP,
+                    };
+                    set!(world, (new_card));
+                } else if (index == 1) {
+                    //  posion
+                    let new_card = Card {
+                        game_id: card.game_id,
+                        x: card.x,
+                        y: card.y,
+                        card_id: CardIdEnum::ItemPoison,
+                        hp: card_value,
+                        max_hp: card_value,
+                        shield: 0,
+                        max_shield: 0,
+                        xp: POISON_XP,
+                    };
+                    set!(world, (new_card));
+                } else if (index == 2) {
+                    //  shield
+                    let new_card = Card {
+                        game_id: card.game_id,
+                        x: card.x,
+                        y: card.y,
+                        card_id: CardIdEnum::ItemShield,
+                        hp: 0,
+                        max_hp: 0,
+                        shield: card_value,
+                        max_shield: 0,
+                        xp: SHIELD_XP
+                    };
+                    set!(world, (new_card));
+                }
                 return player;
             },
             CardIdEnum::ItemChestMiniGame => {
                 // Handle ItemChestMiniGame case
+                // TODO
                 return player;
             },
             CardIdEnum::ItemChestEvil => {
                 // Handle ItemChestEvil case
+                // apply poison or monster
+                let index = random_index(player.hp + player.x + card.x, player.y + card.y, 2);
+
+                // damage
+                if (index == 0) {
+                    player.take_damage(card.hp);
+                } else {
+                    // add xp
+                    player.add_exp(CHEST_XP);
+                }
+
                 return player;
             },
             CardIdEnum::ItemShield => {
@@ -118,10 +155,7 @@ impl ICardImpl of ICardTrait {
                         } else {
                             player.shield + card.shield
                         };
-                return player;
-            },
-            CardIdEnum::SkillFire => {
-                // Handle SkillFire case
+                player.add_exp(SHIELD_XP);
                 return player;
             }
         }
@@ -347,9 +381,8 @@ impl ICardImpl of ICardTrait {
             }
         }
         // get random  inside neighbour_cards
-        let random = (x + 3) * (y + 5) * 7;
-        let randomIndex = random - (random / arr_len) * arr_len;
-        *(neighbour_cards.at(randomIndex))
+        let index = random_index(x, y, arr_len);
+        *(neighbour_cards.at(index))
     }
 
     fn spawn_card(world: IWorldDispatcher, game_id: u32, x: u32, y: u32, player: Player) {
@@ -369,7 +402,6 @@ impl ICardImpl of ICardTrait {
         card_sequence.append(CardIdEnum::Monster1);
         card_sequence.append(CardIdEnum::ItemShield);
         card_sequence.append(CardIdEnum::Monster2);
-        card_sequence.append(CardIdEnum::SkillFire);
         card_sequence.append(CardIdEnum::Boss1);
         card_sequence.append(CardIdEnum::ItemChestEvil);
         card_sequence.append(CardIdEnum::Monster1);
@@ -399,9 +431,25 @@ impl ICardImpl of ICardTrait {
                 CardIdEnum::ItemChestMiniGame => 0,
                 CardIdEnum::ItemChestEvil => 0,
                 CardIdEnum::ItemShield => 0,
-                CardIdEnum::SkillFire => 0
             }
         };
+
+        let xp = {
+            match card_id {
+                CardIdEnum::Player => 0,
+                CardIdEnum::Monster1 => MONSTER1_XP,
+                CardIdEnum::Monster2 => MONSTER2_XP,
+                CardIdEnum::Monster3 => MONSTER3_XP,
+                CardIdEnum::Boss1 => BOSS_XP,
+                CardIdEnum::ItemHeal => HEAL_XP,
+                CardIdEnum::ItemPoison => POISON_XP,
+                CardIdEnum::ItemChest => 0,
+                CardIdEnum::ItemChestMiniGame => 0,
+                CardIdEnum::ItemChestEvil => 0,
+                CardIdEnum::ItemShield => 0,
+            }
+        };
+
         let card = Card {
             game_id: game_id,
             x: x,
@@ -410,9 +458,20 @@ impl ICardImpl of ICardTrait {
             hp: max_hp,
             max_hp: max_hp,
             shield: 0,
-            max_shield: 0
+            max_shield: 0,
+            xp: xp
         };
         set!(world, (card));
+    }
+
+    fn is_monster(self: @Card,) -> bool {
+        match self.card_id {
+            CardIdEnum::Monster1 => true,
+            CardIdEnum::Monster2 => true,
+            CardIdEnum::Monster3 => true,
+            CardIdEnum::Boss1 => true,
+            _ => false,
+        }
     }
 }
 
@@ -430,7 +489,6 @@ enum CardIdEnum {
     ItemChestMiniGame,
     ItemChestEvil,
     ItemShield,
-    SkillFire
 }
 
 impl ImplCardIdEnumIntoFelt252 of Into<CardIdEnum, felt252> {
@@ -447,7 +505,6 @@ impl ImplCardIdEnumIntoFelt252 of Into<CardIdEnum, felt252> {
             CardIdEnum::ItemChestMiniGame => 8,
             CardIdEnum::ItemChestEvil => 9,
             CardIdEnum::ItemShield => 10,
-            CardIdEnum::SkillFire => 11,
         }
     }
 }

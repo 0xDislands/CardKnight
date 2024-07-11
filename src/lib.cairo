@@ -6,6 +6,7 @@ mod models {
     mod card;
     mod game;
     mod player;
+    mod skill;
 }
 
 mod config {

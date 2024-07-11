@@ -16,34 +16,68 @@ struct Player {
     shield: u32,
     max_shield: u32,
     exp: u32,
+    total_xp: u32,
     level: u32,
     high_score: u32,
     sequence: u32,
-    alive: bool
+    alive: bool,
+    turn: u32
 }
 
 #[generate_trait]
 impl IPlayerImpl of IPlayer {
-    fn level_up(world: IWorldDispatcher, player: Player, option: LevelUpOptions) {
-        let mut new_player = player;
+    fn level_up(ref self: Player, option: LevelUpOptions) {
         match option {
-            LevelUpOptions::IncreaseMaxHp => { new_player.max_hp += 1; },
-            LevelUpOptions::AddHp => { new_player.hp += 1; },
-            LevelUpOptions::IncreaseMaxArmour => { new_player.max_shield += 1; },
-            LevelUpOptions::AddArmour => { new_player.shield += 1; }
+            LevelUpOptions::IncreaseMaxHp => { self.max_hp += 1; },
+            LevelUpOptions::AddHp => { self.hp += 1; },
+            LevelUpOptions::IncreaseMaxArmour => { self.max_shield += 1; },
+            LevelUpOptions::AddArmour => { self.shield += 1; }
         }
-        set!(world, (new_player));
     }
 
-    fn add_exp(world: IWorldDispatcher, player: Player) {
-        let mut new_player = player;
-        new_player.exp += 1;
-        if (new_player.exp > EXP_TO_LEVEL_UP) {
-            new_player.exp = 0;
-            new_player.level += 1;
-            Self::level_up(world, new_player, LevelUpOptions::IncreaseMaxHp);
+    fn add_exp(ref self: Player, value: u32) {
+        if value == 0 {
+            return ();
         }
-        set!(world, (new_player));
+
+        self.exp += value;
+        self.total_xp += value;
+        if (self.exp > EXP_TO_LEVEL_UP) {
+            self.exp = 0;
+            self.level += 1;
+            self.level_up(LevelUpOptions::IncreaseMaxHp);
+        }
+    }
+
+    fn take_damage(ref self: Player, mut damage: u32) {
+        if damage == 0 {
+            return ();
+        }
+
+        if (self.shield > 0) {
+            if (self.shield <= damage) {
+                damage -= self.shield;
+                self.shield = 0;
+            } else {
+                damage = 0;
+                self.shield -= damage;
+            };
+        }
+        self.hp = if (self.hp < damage) {
+            0
+        } else {
+            self.hp - damage
+        };
+        if (self.hp == 0) {
+            self.alive = false;
+        }
+    }
+    fn heal(ref self: Player, value: u32) {
+        self.hp = if (self.hp + value > self.max_hp) {
+            self.max_hp
+        } else {
+            self.hp + value
+        };
     }
 }
 
