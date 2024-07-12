@@ -7,7 +7,7 @@ use dojo::world::{IWorld, IWorldDispatcher, IWorldDispatcherTrait};
 use card_knight::config::card::{
     MONSTER1_BASE_HP, MONSTER1_MULTIPLE, MONSTER2_BASE_HP, MONSTER2_MULTIPLE, MONSTER3_BASE_HP,
     MONSTER3_MULTIPLE, MONSTER1_XP, MONSTER2_XP, MONSTER3_XP, BOSS_XP, HEAL_XP, POISON_XP,
-    SHIELD_XP, CHEST_XP
+    SHIELD_XP, CHEST_XP, POISON_TURN
 };
 use card_knight::config::map::{MAP_RANGE};
 use card_knight::utils::random_index;
@@ -73,6 +73,7 @@ impl ICardImpl of ICardTrait {
             CardIdEnum::ItemPoison => {
                 player.take_damage(card.hp);
                 player.add_exp(POISON_XP);
+                player.poisoned = POISON_TURN;
                 return player;
             },
             CardIdEnum::ItemChest => {
@@ -278,33 +279,8 @@ impl ICardImpl of ICardTrait {
         };
 
         let mut neighbour_cards: @Array<Card> = {
-            let mut arr: Array<Card> = ArrayTrait::new();
+            let mut arr: Array<Card> = Self::get_all_neighbours(world, game_id, x, y);
 
-            let (isInsideU, neighbour_up) = Self::get_neighbour_card(
-                world, game_id, x, y, Direction::Up
-            );
-            let (isInsideD, neighbour_down) = Self::get_neighbour_card(
-                world, game_id, x, y, Direction::Down
-            );
-            let (isInsideL, neighbour_left) = Self::get_neighbour_card(
-                world, game_id, x, y, Direction::Left
-            );
-            let (isInsideR, neighbour_right) = Self::get_neighbour_card(
-                world, game_id, x, y, Direction::Right
-            );
-
-            if isInsideU {
-                arr.append(neighbour_up);
-            }
-            if isInsideD {
-                arr.append(neighbour_down);
-            }
-            if isInsideL {
-                arr.append(neighbour_left);
-            }
-            if isInsideR {
-                arr.append(neighbour_right);
-            }
             @arr
         };
 
@@ -472,6 +448,39 @@ impl ICardImpl of ICardTrait {
             CardIdEnum::Boss1 => true,
             _ => false,
         }
+    }
+
+    fn get_all_neighbours(
+        world: IWorldDispatcher, game_id: u32, mut x: u32, mut y: u32,
+    ) -> Array<Card> {
+        let mut arr: Array<Card> = ArrayTrait::new();
+        let (isInsideU, neighbour_up) = Self::get_neighbour_card(
+            world, game_id, x, y, Direction::Up
+        );
+        let (isInsideD, neighbour_down) = Self::get_neighbour_card(
+            world, game_id, x, y, Direction::Down
+        );
+        let (isInsideL, neighbour_left) = Self::get_neighbour_card(
+            world, game_id, x, y, Direction::Left
+        );
+        let (isInsideR, neighbour_right) = Self::get_neighbour_card(
+            world, game_id, x, y, Direction::Right
+        );
+
+        if isInsideU {
+            arr.append(neighbour_up);
+        }
+        if isInsideD {
+            arr.append(neighbour_down);
+        }
+        if isInsideL {
+            arr.append(neighbour_left);
+        }
+        if isInsideR {
+            arr.append(neighbour_right);
+        }
+
+        arr
     }
 }
 

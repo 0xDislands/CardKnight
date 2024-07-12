@@ -7,6 +7,9 @@ trait IActions {
     fn start_game(ref world: IWorldDispatcher, game_id: u32);
     fn move(ref world: IWorldDispatcher, game_id: u32, direction: Direction);
     fn use_skill(ref world: IWorldDispatcher, game_id: u32, skill: Skill);
+    fn use_swap_skill(
+        ref world: IWorldDispatcher, game_id: u32, skill: Skill, direction: Direction
+    );
 }
 
 #[dojo::contract]
@@ -14,9 +17,9 @@ mod actions {
     use starknet::{ContractAddress, get_caller_address};
     use card_knight::models::{
         game::{Game, Direction, GameState}, card::{Card, CardIdEnum, ICardImpl, ICardTrait},
-        player::Player
+        player::{Player, IPlayer}
     };
-    use card_knight::models::skill::{Skill};
+    use card_knight::models::skill::{Skill, PlayerSkill, IPlayerSkill};
 
     use card_knight::utils::{spawn_coords, monster_type_at_position};
     use card_knight::config::{
@@ -88,6 +91,7 @@ mod actions {
                                     high_score: 0,
                                     sequence: 0,
                                     alive: true,
+                                    poisoned: 0,
                                     turn: 0
                                 },
                             )
@@ -174,6 +178,10 @@ mod actions {
             // if card is ItemChest dont change any position 
             if (existingCard.card_id == CardIdEnum::ItemChest) {
                 player.turn += 1;
+                if (player.poisoned != 0) {
+                    player.take_damage(1);
+                    player.poisoned -= 1;
+                }
                 set!(world, (player));
                 return ();
             };
@@ -259,6 +267,10 @@ mod actions {
             player.x = existingCard.x;
             player.y = existingCard.y;
             player.turn += 1;
+            if (player.poisoned != 0) {
+                player.take_damage(1);
+                player.poisoned -= 1;
+            }
             set!(world, (player));
         }
 
@@ -266,9 +278,30 @@ mod actions {
         fn use_skill(ref world: IWorldDispatcher, game_id: u32, skill: Skill) {
             let player_address = get_caller_address();
             let mut player = get!(world, (game_id, player_address), (Player));
-            //let mut  = get!(world, (game_id, player_address, skill), (PlayerSkill));
+            let mut player_skill = get!(world, (game_id, player_address, skill), (PlayerSkill));
 
-            if (skill == Skill::SkillFire) {}
+            assert(player_skill.is_active(player.level), 'User level not enough');
+            player_skill.use_skill(player, skill, world);
+            player_skill.last_use = player.turn;
+            set!(world, (player_skill));
+        }
+
+
+        fn use_swap_skill(
+            ref world: IWorldDispatcher, game_id: u32, skill: Skill, direction: Direction
+        ) {
+            let player_address = get_caller_address();
+            let mut player = get!(world, (game_id, player_address), (Player));
+            let mut player_skill = get!(world, (game_id, player_address, skill), (PlayerSkill));
+
+            assert(
+                ICardImpl::is_move_inside(direction, player.x, player.y), 'Invalid swap direction'
+            );
+
+            assert(player_skill.is_active(player.level), 'User level not enough');
+            player_skill.use_swap_skill(player, skill, world, direction);
+            player_skill.last_use = player.turn;
+            set!(world, (player_skill));
         }
     }
 }

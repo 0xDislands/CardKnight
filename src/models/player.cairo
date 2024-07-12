@@ -21,6 +21,7 @@ struct Player {
     high_score: u32,
     sequence: u32,
     alive: bool,
+    poisoned: u32,
     turn: u32
 }
 
