@@ -13,6 +13,7 @@ const BOSS_MULTIPLE: u32 = 5;
 // Heal & Shield 
 const HEAL_HP: u32 = 5;
 const SHIELD_HP: u32 = 5;
+const POISON_TURN: u32 = 3;
 
 //XPs
 const HEAL_XP: u32 = 0;
