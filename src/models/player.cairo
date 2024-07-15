@@ -2,6 +2,14 @@ use starknet::ContractAddress;
 use dojo::world::{IWorld, IWorldDispatcher, IWorldDispatcherTrait};
 use card_knight::config::{level::EXP_TO_LEVEL_UP};
 
+
+#[derive(Serde, Drop, Copy, PartialEq, Introspect)]
+enum Hero {
+    Knight,
+    Shaman,
+    Vampire
+}
+
 #[derive(Copy, Drop, Serde, PartialEq)]
 #[dojo::model]
 struct Player {
@@ -22,7 +30,8 @@ struct Player {
     sequence: u32,
     alive: bool,
     poisoned: u32,
-    turn: u32
+    turn: u32,
+    heroId: Hero
 }
 
 #[generate_trait]

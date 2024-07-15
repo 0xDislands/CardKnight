@@ -24,3 +24,6 @@ const MONSTER3_XP: u32 = 2;
 const BOSS_XP: u32 = 3;
 const SHIELD_XP: u32 = 0;
 const CHEST_XP: u32 = 1;
+
+// Tags
+const INCREASE_HP_RATIO=20; // %20
