@@ -1,10 +1,11 @@
 use starknet::ContractAddress;
-use card_knight::models::game::{Direction};
+use card_knight::models::game::{Direction, TagType};
 use card_knight::models::skill::{Skill, PlayerSkill};
+use card_knight::models::player::{Hero};
 
 #[dojo::interface]
 trait IActions {
-    fn start_game(ref world: IWorldDispatcher, game_id: u32);
+    fn start_game(ref world: IWorldDispatcher, game_id: u32, hero: Hero);
     fn move(ref world: IWorldDispatcher, game_id: u32, direction: Direction);
     fn use_skill(ref world: IWorldDispatcher, game_id: u32, skill: Skill);
     fn use_swap_skill(
@@ -16,10 +17,11 @@ trait IActions {
 mod actions {
     use starknet::{ContractAddress, get_caller_address};
     use card_knight::models::{
-        game::{Game, Direction, GameState}, card::{Card, CardIdEnum, ICardImpl, ICardTrait},
-        player::{Player, IPlayer}
+        game::{Game, Direction, GameState, TagType},
+        card::{Card, CardIdEnum, ICardImpl, ICardTrait}, player::{Player, IPlayer, Hero}
     };
     use card_knight::models::skill::{Skill, PlayerSkill, IPlayerSkill};
+    use card_knight::models::game::apply_tag_effects;
 
     use card_knight::utils::{spawn_coords, monster_type_at_position};
     use card_knight::config::{
@@ -37,7 +39,7 @@ mod actions {
 
     #[abi(embed_v0)]
     impl PlayerActionsImpl of IActions<ContractState> {
-        fn start_game(ref world: IWorldDispatcher, game_id: u32) {
+        fn start_game(ref world: IWorldDispatcher, game_id: u32, hero: Hero) {
             let player = get_caller_address();
             set!(
                 world,
@@ -70,6 +72,7 @@ mod actions {
                                     shield: 0,
                                     max_shield: 10,
                                     xp: 0,
+                                    tag: TagType::None
                                 },
                             )
                         );
@@ -92,7 +95,8 @@ mod actions {
                                     sequence: 0,
                                     alive: true,
                                     poisoned: 0,
-                                    turn: 0
+                                    turn: 0,
+                                    heroId: hero
                                 },
                             )
                         );
@@ -115,6 +119,7 @@ mod actions {
                                 shield: 0,
                                 max_shield: 0,
                                 xp: MONSTER1_XP,
+                                tag: TagType::None
                             })
                         );
                         MONSTER_COUNT -= 1;
@@ -131,6 +136,7 @@ mod actions {
                                 shield: 0,
                                 max_shield: 0,
                                 xp: HEAL_XP,
+                                tag: TagType::None
                             })
                         );
                         ITEM_COUNT -= 1;
@@ -196,7 +202,8 @@ mod actions {
                 max_hp: player.max_hp,
                 shield: player.shield,
                 max_shield: player.max_shield,
-                xp: 0
+                xp: 0,
+                tag: TagType::None
             };
 
             // Move cards after use
@@ -261,8 +268,7 @@ mod actions {
                 );
                 set!(world, (card_move));
             }
-            // spawn new card at the end of the move
-            ICardImpl::spawn_card(world, game_id, moveCard_x, moveCard_y, player);
+
             set!(world, (new_player_card));
             player.x = existingCard.x;
             player.y = existingCard.y;
@@ -272,6 +278,10 @@ mod actions {
                 player.poisoned -= 1;
             }
             set!(world, (player));
+            apply_tag_effects(world, player);
+
+            // spawn new card at the end of the move
+            ICardImpl::spawn_card(world, game_id, moveCard_x, moveCard_y, player);
         }
 
 

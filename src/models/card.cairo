@@ -1,13 +1,13 @@
 use card_knight::models::player::IPlayer;
 use card_knight::models::player::{Player, IPlayerImpl};
-use card_knight::models::game::Direction;
+use card_knight::models::game::{Direction, TagType};
 use starknet::ContractAddress;
 
 use dojo::world::{IWorld, IWorldDispatcher, IWorldDispatcherTrait};
 use card_knight::config::card::{
     MONSTER1_BASE_HP, MONSTER1_MULTIPLE, MONSTER2_BASE_HP, MONSTER2_MULTIPLE, MONSTER3_BASE_HP,
     MONSTER3_MULTIPLE, MONSTER1_XP, MONSTER2_XP, MONSTER3_XP, BOSS_XP, HEAL_XP, POISON_XP,
-    SHIELD_XP, CHEST_XP, POISON_TURN
+    SHIELD_XP, CHEST_XP, POISON_TURN,INCREASE_HP_RATIO
 };
 use card_knight::config::map::{MAP_RANGE};
 use card_knight::utils::random_index;
@@ -27,6 +27,7 @@ struct Card {
     shield: u32,
     max_shield: u32,
     xp: u32,
+    tag: TagType
 }
 
 #[derive(Drop, Serde)]
@@ -95,6 +96,7 @@ impl ICardImpl of ICardTrait {
                         shield: 0,
                         max_shield: 0,
                         xp: HEAL_XP,
+                        tag: TagType::None
                     };
                     set!(world, (new_card));
                 } else if (index == 1) {
@@ -109,6 +111,7 @@ impl ICardImpl of ICardTrait {
                         shield: 0,
                         max_shield: 0,
                         xp: POISON_XP,
+                        tag: TagType::None
                     };
                     set!(world, (new_card));
                 } else if (index == 2) {
@@ -122,7 +125,8 @@ impl ICardImpl of ICardTrait {
                         max_hp: 0,
                         shield: card_value,
                         max_shield: 0,
-                        xp: SHIELD_XP
+                        xp: SHIELD_XP,
+                        tag: TagType::None
                     };
                     set!(world, (new_card));
                 }
@@ -425,6 +429,7 @@ impl ICardImpl of ICardTrait {
                 CardIdEnum::ItemShield => 0,
             }
         };
+        let tag_type = Self::get_tag(*card_id, x, y);
 
         let card = Card {
             game_id: game_id,
@@ -435,9 +440,35 @@ impl ICardImpl of ICardTrait {
             max_hp: max_hp,
             shield: 0,
             max_shield: 0,
-            xp: xp
+            xp: xp,
+            tag: tag_type
         };
         set!(world, (card));
+    }
+
+    fn get_tag(card_id: CardIdEnum, x: u32, y: u32) -> TagType {
+        let is_monster = match card_id {
+            CardIdEnum::Monster1 => true,
+            CardIdEnum::Monster2 => true,
+            CardIdEnum::Monster3 => true,
+            CardIdEnum::Boss1 => true,
+            _ => false,
+        };
+        if (!is_monster) {
+            return (TagType::None);
+        }
+        if (x == 0 && y == 0) {
+            return (TagType::Growth);
+        } else if (x == 1 && y == 0) {
+            return (TagType::NoMagic);
+        } else if (x == 0 && y == 1) {
+            return (TagType::Revenge);
+        } else if (x == 1 && y == 1) {
+            return (TagType::NoHope);
+        } else if (x == 21 && y == 1) {
+            return (TagType::Silent);
+        }
+        TagType::None
     }
 
     fn is_monster(self: @Card,) -> bool {
@@ -482,6 +513,23 @@ impl ICardImpl of ICardTrait {
 
         arr
     }
+
+    fn apply_growth_tag(ref self: Card) {
+        let hp = self.max_hp / 10;
+        self.max_hp += hp;
+        self.hp += hp;
+    }
+
+    fn apply_revenge_tag(ref self: Card) {
+        if (self.hp>=self.max_hp){
+            return();
+        }
+        let mut hp = self.hp * INCREASE_HP_RATIO /100;
+        hp= if (hp==0) {1} else {hp};
+        self.hp += hp;
+        self.max_hp= self.hp;
+    }
+
 }
 
 

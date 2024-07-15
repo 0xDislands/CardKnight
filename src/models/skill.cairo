@@ -7,6 +7,7 @@ use card_knight::models::game::{Direction};
 
 use card_knight::config::map::{MAP_RANGE};
 use card_knight::models::{card::{Card, CardIdEnum, ICardImpl, ICardTrait}, player::Player};
+
 #[derive(Serde, Drop, Copy, PartialEq, Introspect)]
 enum Skill {
     SkillFire,
