@@ -1,6 +1,7 @@
 use starknet::ContractAddress;
 use dojo::world::{IWorld, IWorldDispatcher, IWorldDispatcherTrait};
 use card_knight::config::{level::EXP_TO_LEVEL_UP};
+use card_knight::models::skill::{Skill, PlayerSkill};
 
 
 #[derive(Serde, Drop, Copy, PartialEq, Introspect)]
@@ -88,6 +89,39 @@ impl IPlayerImpl of IPlayer {
         } else {
             self.hp + value
         };
+    }
+
+    fn set_init_hero(ref self: Player) {
+        match self.heroId {
+            Hero::Knight => { self.hp = 10 },
+            Hero::Shaman => { self.hp = 8 },
+            Hero::Vampire => { self.hp = 9 },
+        }
+    }
+
+    fn validate_skill(self: @Player, skill: Skill) {
+        match self.heroId {
+            Hero::Knight => {
+                assert(
+                    skill == Skill::PowerupSlash
+                        || skill == Skill::Teleport
+                        || skill == Skill::Regeneration,
+                    'Invalid hero skill'
+                );
+            },
+            Hero::Shaman => {
+                assert(
+                    skill == Skill::Hex || skill == Skill::Shuffle || skill == Skill::Meteor,
+                    'Invalid hero skill'
+                );
+            },
+            Hero::Vampire => {
+                assert(
+                    skill == Skill::LifeSteal || skill == Skill::Teleport || skill == Skill::Curse,
+                    'Invalid hero skill'
+                );
+            },
+        }
     }
 }
 

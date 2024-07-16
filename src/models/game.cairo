@@ -70,3 +70,23 @@ fn apply_tag_effects(world: IWorldDispatcher, player: Player,) {
         x = x + 1;
     };
 }
+
+
+fn is_silent(world: IWorldDispatcher, player: Player,) -> bool {
+    let mut x: u32 = 0;
+    let mut y: u32 = 0;
+    let mut any_silent = false;
+    while x <= MAP_RANGE {
+        while y <= MAP_RANGE {
+            let mut card = get!(world, (player.game_id, x, y), (Card));
+            match card.tag {
+                TagType::Silent => { any_silent = true },
+                _ => {},
+            };
+
+            y = y + 1;
+        };
+        x = x + 1;
+    };
+    any_silent
+}

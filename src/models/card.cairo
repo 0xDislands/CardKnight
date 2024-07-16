@@ -7,7 +7,7 @@ use dojo::world::{IWorld, IWorldDispatcher, IWorldDispatcherTrait};
 use card_knight::config::card::{
     MONSTER1_BASE_HP, MONSTER1_MULTIPLE, MONSTER2_BASE_HP, MONSTER2_MULTIPLE, MONSTER3_BASE_HP,
     MONSTER3_MULTIPLE, MONSTER1_XP, MONSTER2_XP, MONSTER3_XP, BOSS_XP, HEAL_XP, POISON_XP,
-    SHIELD_XP, CHEST_XP, POISON_TURN,INCREASE_HP_RATIO
+    SHIELD_XP, CHEST_XP, POISON_TURN, INCREASE_HP_RATIO
 };
 use card_knight::config::map::{MAP_RANGE};
 use card_knight::utils::random_index;
@@ -162,7 +162,8 @@ impl ICardImpl of ICardTrait {
                         };
                 player.add_exp(SHIELD_XP);
                 return player;
-            }
+            },
+            _ => { return player; }
         }
     }
 
@@ -411,6 +412,7 @@ impl ICardImpl of ICardTrait {
                 CardIdEnum::ItemChestMiniGame => 0,
                 CardIdEnum::ItemChestEvil => 0,
                 CardIdEnum::ItemShield => 0,
+                _ => 0,
             }
         };
 
@@ -427,6 +429,7 @@ impl ICardImpl of ICardTrait {
                 CardIdEnum::ItemChestMiniGame => 0,
                 CardIdEnum::ItemChestEvil => 0,
                 CardIdEnum::ItemShield => 0,
+                _ => 0,
             }
         };
         let tag_type = Self::get_tag(*card_id, x, y);
@@ -521,15 +524,18 @@ impl ICardImpl of ICardTrait {
     }
 
     fn apply_revenge_tag(ref self: Card) {
-        if (self.hp>=self.max_hp){
-            return();
+        if (self.hp >= self.max_hp) {
+            return ();
         }
-        let mut hp = self.hp * INCREASE_HP_RATIO /100;
-        hp= if (hp==0) {1} else {hp};
+        let mut hp = self.hp * INCREASE_HP_RATIO / 100;
+        hp = if (hp == 0) {
+            1
+        } else {
+            hp
+        };
         self.hp += hp;
-        self.max_hp= self.hp;
+        self.max_hp = self.hp;
     }
-
 }
 
 
@@ -546,6 +552,7 @@ enum CardIdEnum {
     ItemChestMiniGame,
     ItemChestEvil,
     ItemShield,
+    Hex
 }
 
 impl ImplCardIdEnumIntoFelt252 of Into<CardIdEnum, felt252> {
@@ -562,6 +569,7 @@ impl ImplCardIdEnumIntoFelt252 of Into<CardIdEnum, felt252> {
             CardIdEnum::ItemChestMiniGame => 8,
             CardIdEnum::ItemChestEvil => 9,
             CardIdEnum::ItemShield => 10,
+            CardIdEnum::Hex => 11
         }
     }
 }

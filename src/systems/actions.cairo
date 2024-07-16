@@ -7,10 +7,11 @@ use card_knight::models::player::{Hero};
 trait IActions {
     fn start_game(ref world: IWorldDispatcher, game_id: u32, hero: Hero);
     fn move(ref world: IWorldDispatcher, game_id: u32, direction: Direction);
-    fn use_skill(ref world: IWorldDispatcher, game_id: u32, skill: Skill);
+    fn use_skill(ref world: IWorldDispatcher, game_id: u32, skill: Skill, direction: Direction);
     fn use_swap_skill(
         ref world: IWorldDispatcher, game_id: u32, skill: Skill, direction: Direction
     );
+    fn use_curse_skill(ref world: IWorldDispatcher, game_id: u32, x: u32, y: u32);
 }
 
 #[dojo::contract]
@@ -21,16 +22,17 @@ mod actions {
         card::{Card, CardIdEnum, ICardImpl, ICardTrait}, player::{Player, IPlayer, Hero}
     };
     use card_knight::models::skill::{Skill, PlayerSkill, IPlayerSkill};
-    use card_knight::models::game::apply_tag_effects;
+    use card_knight::models::game::{apply_tag_effects, is_silent};
 
     use card_knight::utils::{spawn_coords, monster_type_at_position};
     use card_knight::config::{
         card::{
             MONSTER1_BASE_HP, MONSTER1_MULTIPLE, MONSTER2_BASE_HP, MONSTER2_MULTIPLE,
-            MONSTER3_BASE_HP, MONSTER3_MULTIPLE, HEAL_HP, SHIELD_HP, MONSTER1_XP, HEAL_XP
+            MONSTER3_BASE_HP, MONSTER3_MULTIPLE, HEAL_HP, SHIELD_HP, MONSTER1_XP, HEAL_XP,
         },
         player::PLAYER_STARTING_POINT, level::{MONSTER_TO_START_WITH, ITEM_TO_START_WITH},
     };
+    use card_knight::config::level::{SKILL_LEVEL, BIG_SKILL_CD,};
     use poseidon::PoseidonTrait;
     use hash::HashStateTrait;
 
@@ -76,30 +78,28 @@ mod actions {
                                 },
                             )
                         );
-                        set!(
-                            world,
-                            (
-                                Player {
-                                    game_id,
-                                    player,
-                                    x: x,
-                                    y: y,
-                                    hp: 10,
-                                    max_hp: 10,
-                                    shield: 0,
-                                    max_shield: 10,
-                                    exp: 0,
-                                    total_xp: 0,
-                                    level: 1,
-                                    high_score: 0,
-                                    sequence: 0,
-                                    alive: true,
-                                    poisoned: 0,
-                                    turn: 0,
-                                    heroId: hero
-                                },
-                            )
-                        );
+
+                        let mut player = Player {
+                            game_id,
+                            player,
+                            x: x,
+                            y: y,
+                            hp: 10,
+                            max_hp: 10,
+                            shield: 0,
+                            max_shield: 10,
+                            exp: 0,
+                            total_xp: 0,
+                            level: 1,
+                            high_score: 0,
+                            sequence: 0,
+                            alive: true,
+                            poisoned: 0,
+                            turn: 0,
+                            heroId: hero
+                        };
+                        player.set_init_hero();
+                        set!(world, (player));
                         y += 1;
                         continue;
                     }
@@ -285,13 +285,17 @@ mod actions {
         }
 
 
-        fn use_skill(ref world: IWorldDispatcher, game_id: u32, skill: Skill) {
+        fn use_skill(
+            ref world: IWorldDispatcher, game_id: u32, skill: Skill, direction: Direction
+        ) {
             let player_address = get_caller_address();
             let mut player = get!(world, (game_id, player_address), (Player));
+            player.validate_skill(skill);
             let mut player_skill = get!(world, (game_id, player_address, skill), (PlayerSkill));
+            assert(!is_silent(world, player), 'Silence active');
 
             assert(player_skill.is_active(player.level), 'User level not enough');
-            player_skill.use_skill(player, skill, world);
+            player_skill.use_skill(player, skill, world, direction);
             player_skill.last_use = player.turn;
             set!(world, (player_skill));
         }
@@ -302,7 +306,10 @@ mod actions {
         ) {
             let player_address = get_caller_address();
             let mut player = get!(world, (game_id, player_address), (Player));
+            player.validate_skill(skill);
+
             let mut player_skill = get!(world, (game_id, player_address, skill), (PlayerSkill));
+            assert(!is_silent(world, player), 'Silence active');
 
             assert(
                 ICardImpl::is_move_inside(direction, player.x, player.y), 'Invalid swap direction'
@@ -310,6 +317,30 @@ mod actions {
 
             assert(player_skill.is_active(player.level), 'User level not enough');
             player_skill.use_swap_skill(player, skill, world, direction);
+            player_skill.last_use = player.turn;
+            set!(world, (player_skill));
+            player.turn += 1;
+            if (player.poisoned != 0) {
+                player.take_damage(1);
+                player.poisoned -= 1;
+            }
+            set!(world, (player));
+        }
+
+
+        fn use_curse_skill(ref world: IWorldDispatcher, game_id: u32, x: u32, y: u32) {
+            let player_address = get_caller_address();
+            let skill = Skill::Curse;
+            let mut player = get!(world, (game_id, player_address), (Player));
+            player.validate_skill(skill);
+
+            let mut player_skill = get!(world, (game_id, player_address, skill), (PlayerSkill));
+            assert(!is_silent(world, player), 'Silence active');
+            assert(x < 3 && y < 3, 'Position not valid');
+            assert(player_skill.last_use + BIG_SKILL_CD <= player.turn, 'Skill cooldown');
+
+            assert(player_skill.is_active(player.level), 'User level not enough');
+            player_skill.use_curse_skill(world, player.game_id, x, y);
             player_skill.last_use = player.turn;
             set!(world, (player_skill));
         }

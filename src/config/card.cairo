@@ -26,4 +26,4 @@ const SHIELD_XP: u32 = 0;
 const CHEST_XP: u32 = 1;
 
 // Tags
-const INCREASE_HP_RATIO=20; // %20
+const INCREASE_HP_RATIO: u32 = 20; // %20
