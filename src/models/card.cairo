@@ -468,7 +468,7 @@ impl ICardImpl of ICardTrait {
             return (TagType::Revenge);
         } else if (x == 1 && y == 1) {
             return (TagType::NoHope);
-        } else if (x == 21 && y == 1) {
+        } else if (x == 2 && y == 1) {
             return (TagType::Silent);
         }
         TagType::None

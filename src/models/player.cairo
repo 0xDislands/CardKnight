@@ -1,6 +1,6 @@
 use starknet::ContractAddress;
 use dojo::world::{IWorld, IWorldDispatcher, IWorldDispatcherTrait};
-use card_knight::config::{level::EXP_TO_LEVEL_UP};
+use card_knight::config::level;
 use card_knight::models::skill::{Skill, PlayerSkill};
 
 
@@ -37,27 +37,75 @@ struct Player {
 
 #[generate_trait]
 impl IPlayerImpl of IPlayer {
-    fn level_up(ref self: Player, option: LevelUpOptions) {
-        match option {
-            LevelUpOptions::IncreaseMaxHp => { self.max_hp += 1; },
-            LevelUpOptions::AddHp => { self.hp += 1; },
-            LevelUpOptions::IncreaseMaxArmour => { self.max_shield += 1; },
-            LevelUpOptions::AddArmour => { self.shield += 1; }
+    fn level_up(ref self: Player, upgrade: u32) {
+        match self.total_xp {
+            0 => {},
+            1 => {
+                assert(self.total_xp >= level::LEVEL2_XP, 'Cant level up');
+                self.exp = self.total_xp - level::LEVEL2_XP;
+                if (upgrade == 1) {
+                    self.max_hp += level::LEVEL2_UP1;
+                } else {
+                    self.heal(level::LEVEL2_UP2);
+                }
+            },
+            2 => {
+                assert(self.total_xp >= level::LEVEL3_XP, 'Cant level up');
+                self.exp = self.total_xp - level::LEVEL3_XP;
+                if (upgrade == 1) {
+                    self.max_shield += level::LEVEL3_UP1;
+                } else {
+                    self.heal(self.max_hp);
+                }
+            },
+            3 => {
+                assert(self.total_xp >= level::LEVEL4_XP, 'Cant level up');
+                self.exp = self.total_xp - level::LEVEL4_XP;
+                if (upgrade == 1) {
+                    self.max_hp += level::LEVEL4_UP1;
+                } else {
+                    self.heal(level::LEVEL4_UP2);
+                }
+            },
+            4 => {
+                assert(self.total_xp >= level::LEVEL5_XP, 'Cant level up');
+                self.exp = self.total_xp - level::LEVEL5_XP;
+                if (upgrade == 1) {
+                    self.max_shield += level::LEVEL5_UP1;
+                } else {
+                    self.heal(self.max_hp);
+                }
+            },
+            5 => {
+                assert(self.total_xp >= level::LEVEL6_XP, 'Cant level up');
+                self.exp = self.total_xp - level::LEVEL6_XP;
+                if (upgrade == 1) {
+                    self.max_hp += level::LEVEL6_UP1;
+                } else {
+                    self.heal(self.max_hp);
+                }
+            },
+            _ => {
+                let expected_xp = level::LEVEL6_XP + (self.level - 5) * level::LEVEL7_PLUS;
+                assert(self.total_xp >= expected_xp, 'Cant level up');
+                self.exp = self.total_xp - expected_xp;
+                if (upgrade == 1) {
+                    self.shield = self.max_shield;
+                } else {
+                    self.heal(self.max_hp);
+                }
+            },
         }
+        self.level += 1;
     }
+
 
     fn add_exp(ref self: Player, value: u32) {
         if value == 0 {
             return ();
         }
-
         self.exp += value;
         self.total_xp += value;
-        if (self.exp > EXP_TO_LEVEL_UP) {
-            self.exp = 0;
-            self.level += 1;
-            self.level_up(LevelUpOptions::IncreaseMaxHp);
-        }
     }
 
     fn take_damage(ref self: Player, mut damage: u32) {

@@ -12,6 +12,7 @@ trait IActions {
         ref world: IWorldDispatcher, game_id: u32, skill: Skill, direction: Direction
     );
     fn use_curse_skill(ref world: IWorldDispatcher, game_id: u32, x: u32, y: u32);
+    fn level_up(ref world: IWorldDispatcher, game_id: u32, upgrade: u32);
 }
 
 #[dojo::contract]
@@ -343,6 +344,12 @@ mod actions {
             player_skill.use_curse_skill(world, player.game_id, x, y);
             player_skill.last_use = player.turn;
             set!(world, (player_skill));
+        }
+
+        fn level_up(ref world: IWorldDispatcher, game_id: u32, upgrade: u32) {
+            let player_address = get_caller_address();
+            let mut player = get!(world, (game_id, player_address), (Player));
+            player.level_up(upgrade);
         }
     }
 }
