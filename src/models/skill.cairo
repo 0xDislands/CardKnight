@@ -62,6 +62,9 @@ impl IPlayerSkillImpl of IPlayerSkill {
                     if (card.is_monster() && card.tag != TagType::NoMagic) {
                         card.hp -= card.hp / 4;
                         if (card.hp == 0) {
+                            if (card.card_id == CardIdEnum::Boss1) {
+                                ICardImpl::flip_cards(world, player.game_id, false);
+                            }
                             ICardImpl::spawn_card(world, player.game_id, card.x, card.y, player);
                         } else {
                             set!(world, (card));
@@ -86,6 +89,9 @@ impl IPlayerSkillImpl of IPlayerSkill {
                 if (card.is_monster() && card.tag != TagType::NoMagic) {
                     let damage = card.max_hp / 4 + 1;
                     if (card.hp <= damage) {
+                        if (card.card_id == CardIdEnum::Boss1) {
+                            ICardImpl::flip_cards(world, player.game_id, false);
+                        }
                         ICardImpl::spawn_card(world, player.game_id, card.x, card.y, player);
                     } else {
                         card.hp = card.hp - damage;
@@ -104,6 +110,9 @@ impl IPlayerSkillImpl of IPlayerSkill {
                     let mut card = get!(world, (player.game_id, x, y), (Card));
                     if (card.is_monster() && card.tag != TagType::NoMagic) {
                         if (card.hp < damage) {
+                            if (card.card_id == CardIdEnum::Boss1) {
+                                ICardImpl::flip_cards(world, player.game_id, false);
+                            }
                             ICardImpl::spawn_card(world, player.game_id, card.x, card.y, player);
                         } else {
                             card.hp -= damage;
@@ -142,7 +151,8 @@ impl IPlayerSkillImpl of IPlayerSkill {
                     shield: 0,
                     max_shield: 0,
                     xp: 0,
-                    tag: TagType::None
+                    tag: TagType::None,
+                    flipped: false,
                 };
                 set!(world, (new_card));
             }
