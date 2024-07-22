@@ -32,7 +32,6 @@ struct GamePoints {
 struct PlayerGameData {
     #[key]
     player_address: ContractAddress,
-    highest_score: u64,
     game_state: PlayerGameState,
     game_id: u32,
 }

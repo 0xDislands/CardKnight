@@ -6,14 +6,16 @@ use card_knight::models::player::{Hero};
 #[dojo::interface]
 trait IActions {
     fn search_game(ref world: IWorldDispatcher, hero: Hero);
-    fn quit_game(ref world: IWorldDispatcher) ;
+    fn quit_game(ref world: IWorldDispatcher);
     fn start_game(ref world: IWorldDispatcher,);
-
     fn move(ref world: IWorldDispatcher, direction: Direction);
     fn use_skill(ref world: IWorldDispatcher, skill: Skill, direction: Direction);
     fn use_swap_skill(ref world: IWorldDispatcher, skill: Skill, direction: Direction);
     fn use_curse_skill(ref world: IWorldDispatcher, x: u32, y: u32);
     fn level_up(ref world: IWorldDispatcher, upgrade: u32);
+    fn get_user_points(
+        world: @IWorldDispatcher, game_id: u32
+    ) -> (Array<ContractAddress>, Array<u32>);
 }
 
 #[dojo::contract]
@@ -76,7 +78,7 @@ mod actions {
                         world,
                         (
                             GamePoints {
-                                game_id, index: game.player_count, player_address, score: 0, 
+                                game_id, index: game.player_count, player_address, score: 0,
                             },
                         )
                     );
@@ -97,6 +99,34 @@ mod actions {
             player_data.game_id = 0;
             player_data.game_state = PlayerGameState::None;
             set!(world, (player_data));
+
+            let mut i = 1;
+            // Find user index and remove from points
+            while (i <= game.player_count + 1) {
+                let points = get!(world, (player_data.game_id, i), (GamePoints));
+                if (points.player_address == player_address) {
+                    // move last player index to current player
+                    let mut last_points = get!(
+                        world, (player_data.game_id, game.player_count + 1), (GamePoints)
+                    );
+                    last_points.index = i;
+                    set!(world, (last_points))
+                }
+
+                i = i + 1;
+            };
+
+            set!(
+                world,
+                (
+                    GamePoints {
+                        game_id: player_data.game_id,
+                        index: game.player_count + 1,
+                        player_address: Zeroable::zero(),
+                        score: 0,
+                    },
+                )
+            );
         }
 
         fn start_game(ref world: IWorldDispatcher,) {
@@ -400,6 +430,71 @@ mod actions {
 
             let mut player = get!(world, (game_id, player_address), (Player));
             player.level_up(upgrade);
+        }
+
+        fn get_user_points(
+            world: @IWorldDispatcher, game_id: u32
+        ) -> (Array<ContractAddress>, Array<u32>) {
+            let mut game = get!(world, (game_id), (Game));
+            assert(game.state == GameState::Started, 'Game not started');
+
+            let mut users = ArrayTrait::new();
+            let mut scores = ArrayTrait::new();
+            let array_len = game.player_count;
+            let mut i = 1;
+            while (i <= array_len) {
+                let points = get!(world, (game_id, i), (GamePoints));
+                users.append(points.player_address);
+                scores.append(points.score);
+            };
+
+            if array_len == 1 {
+                return (users, scores);
+            }
+
+            let mut idx1 = 0;
+            let mut idx2 = 1;
+            let mut sorted_iteration = true;
+            let mut sorted_users = ArrayTrait::new();
+            let mut sorted_scores = ArrayTrait::new();
+
+            let mut array = scores.span();
+            let mut array2 = users.span();
+
+            loop {
+                if idx2 == array.len() {
+                    sorted_scores.append(*array[idx1]);
+                    sorted_users.append(*array2[idx1]);
+
+                    if sorted_iteration {
+                        break;
+                    }
+                    array = sorted_scores.span();
+                    array2= sorted_users.span();
+
+                    sorted_scores = array![];
+                    sorted_users = array![];
+                    idx1 = 0;
+                    idx2 = 1;
+                    sorted_iteration = true;
+                } else {
+                    if *array[idx1] <= *array[idx2] {
+                        sorted_scores.append(*array[idx1]);
+                        sorted_users.append(*array2[idx1]);
+
+                        idx1 = idx2;
+                        idx2 += 1;
+                    } else {
+                        sorted_scores.append(*array[idx2]);
+                        sorted_users.append(*array2[idx2]);
+
+                        idx2 += 1;
+                        sorted_iteration = false;
+                    }
+                };
+            };
+
+            (sorted_users, sorted_scores)
         }
     }
 }

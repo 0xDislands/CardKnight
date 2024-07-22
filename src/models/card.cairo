@@ -45,35 +45,35 @@ impl ICardImpl of ICardTrait {
             CardIdEnum::Player => { return player; },
             CardIdEnum::Monster1 => {
                 player.take_damage(card.hp);
-                player.add_exp(MONSTER1_XP);
+                player.add_exp(world, MONSTER1_XP);
                 return player;
             },
             CardIdEnum::Monster2 => {
                 // Handle Monster2 case
                 player.take_damage(card.hp);
-                player.add_exp(MONSTER2_XP);
+                player.add_exp(world, MONSTER2_XP);
                 return player;
             },
             CardIdEnum::Monster3 => {
                 // Handle Monster3 case
                 player.take_damage(card.hp);
-                player.add_exp(MONSTER3_XP);
+                player.add_exp(world, MONSTER3_XP);
                 return player;
             },
             CardIdEnum::Boss1 => {
                 let damage = card.hp + card.shield;
                 player.take_damage(damage);
-                player.add_exp(BOSS_XP);
+                player.add_exp(world, BOSS_XP);
                 return player;
             },
             CardIdEnum::ItemHeal => {
                 player.heal(card.hp);
-                player.add_exp(HEAL_XP);
+                player.add_exp(world, HEAL_XP);
                 return player;
             },
             CardIdEnum::ItemPoison => {
                 player.take_damage(card.hp);
-                player.add_exp(POISON_XP);
+                player.add_exp(world, POISON_XP);
                 player.poisoned = POISON_TURN;
                 return player;
             },
@@ -147,7 +147,7 @@ impl ICardImpl of ICardTrait {
                     player.take_damage(card.hp);
                 } else {
                     // add xp
-                    player.add_exp(CHEST_XP);
+                    player.add_exp(world, CHEST_XP);
                 }
 
                 return player;
@@ -160,7 +160,7 @@ impl ICardImpl of ICardTrait {
                         } else {
                             player.shield + card.shield
                         };
-                player.add_exp(SHIELD_XP);
+                player.add_exp(world, SHIELD_XP);
                 return player;
             },
             _ => { return player; }

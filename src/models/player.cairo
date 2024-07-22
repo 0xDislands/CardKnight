@@ -2,6 +2,7 @@ use starknet::ContractAddress;
 use dojo::world::{IWorld, IWorldDispatcher, IWorldDispatcherTrait};
 use card_knight::config::level;
 use card_knight::models::skill::{Skill, PlayerSkill};
+use card_knight::models::game::{GamePoints, Game};
 
 
 #[derive(Serde, Drop, Copy, PartialEq, Introspect)]
@@ -100,12 +101,22 @@ impl IPlayerImpl of IPlayer {
     }
 
 
-    fn add_exp(ref self: Player, value: u32) {
+    fn add_exp(ref self: Player, world: IWorldDispatcher, value: u32) {
         if value == 0 {
             return ();
         }
         self.exp += value;
         self.total_xp += value;
+        let mut game = get!(world, (self.game_id), (Game));
+        let mut i = 1;
+        while (i <= game.player_count) {
+            let mut points = get!(world, (self.game_id, i), (GamePoints));
+            if (self.player_address == points.player_address) {
+                points.score = self.total_xp;
+                set!(world, (points));
+                break;
+            }
+        }
     }
 
     fn take_damage(ref self: Player, mut damage: u32) {
