@@ -17,7 +17,7 @@ struct Player {
     #[key]
     game_id: u32,
     #[key]
-    player: ContractAddress,
+    player_address: ContractAddress,
     x: u32,
     y: u32,
     hp: u32,

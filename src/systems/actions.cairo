@@ -5,25 +5,28 @@ use card_knight::models::player::{Hero};
 
 #[dojo::interface]
 trait IActions {
-    fn start_game(ref world: IWorldDispatcher, game_id: u32, hero: Hero);
-    fn move(ref world: IWorldDispatcher, game_id: u32, direction: Direction);
-    fn use_skill(ref world: IWorldDispatcher, game_id: u32, skill: Skill, direction: Direction);
-    fn use_swap_skill(
-        ref world: IWorldDispatcher, game_id: u32, skill: Skill, direction: Direction
-    );
-    fn use_curse_skill(ref world: IWorldDispatcher, game_id: u32, x: u32, y: u32);
-    fn level_up(ref world: IWorldDispatcher, game_id: u32, upgrade: u32);
+    fn search_game(ref world: IWorldDispatcher, hero: Hero);
+    fn quit_game(ref world: IWorldDispatcher) ;
+    fn start_game(ref world: IWorldDispatcher,);
+
+    fn move(ref world: IWorldDispatcher, direction: Direction);
+    fn use_skill(ref world: IWorldDispatcher, skill: Skill, direction: Direction);
+    fn use_swap_skill(ref world: IWorldDispatcher, skill: Skill, direction: Direction);
+    fn use_curse_skill(ref world: IWorldDispatcher, x: u32, y: u32);
+    fn level_up(ref world: IWorldDispatcher, upgrade: u32);
 }
 
 #[dojo::contract]
 mod actions {
     use starknet::{ContractAddress, get_caller_address};
     use card_knight::models::{
-        game::{Game, Direction, GameState, TagType},
+        game::{
+            Game, Direction, GameState, TagType, apply_tag_effects, is_silent, PlayerGameData,
+            PlayerGameState, GamePoints
+        },
         card::{Card, CardIdEnum, ICardImpl, ICardTrait}, player::{Player, IPlayer, Hero}
     };
     use card_knight::models::skill::{Skill, PlayerSkill, IPlayerSkill};
-    use card_knight::models::game::{apply_tag_effects, is_silent};
 
     use card_knight::utils::{spawn_coords, monster_type_at_position};
     use card_knight::config::{
@@ -31,9 +34,12 @@ mod actions {
             MONSTER1_BASE_HP, MONSTER1_MULTIPLE, MONSTER2_BASE_HP, MONSTER2_MULTIPLE,
             MONSTER3_BASE_HP, MONSTER3_MULTIPLE, HEAL_HP, SHIELD_HP, MONSTER1_XP, HEAL_XP,
         },
-        player::PLAYER_STARTING_POINT, level::{MONSTER_TO_START_WITH, ITEM_TO_START_WITH},
+        player::{PLAYER_STARTING_POINT, default_player},
+        level::{MONSTER_TO_START_WITH, ITEM_TO_START_WITH},
     };
     use card_knight::config::level::{SKILL_LEVEL, BIG_SKILL_CD,};
+    use card_knight::config::map::{PLAYER_LIMIT,};
+
     use poseidon::PoseidonTrait;
     use hash::HashStateTrait;
 
@@ -42,14 +48,62 @@ mod actions {
 
     #[abi(embed_v0)]
     impl PlayerActionsImpl of IActions<ContractState> {
-        fn start_game(ref world: IWorldDispatcher, game_id: u32, hero: Hero) {
-            let player = get_caller_address();
-            set!(
-                world,
-                (Game {
-                    game_id: game_id, player, highest_score: 0, game_state: GameState::Playing
-                })
-            );
+        fn search_game(ref world: IWorldDispatcher, hero: Hero) {
+            let player_address = get_caller_address();
+            let mut player_data = get!(world, (player_address), (PlayerGameData));
+            assert(player_data.game_state == PlayerGameState::None, 'Player already playing');
+
+            let mut game_id = 1;
+            while true {
+                let mut game = get!(world, (game_id), (Game));
+                if (game.player_count <= PLAYER_LIMIT) {
+                    game.player_count += 1;
+                    if (game.state == GameState::None) {
+                        game.state = GameState::Started;
+                    }
+                    set!(world, (game));
+                    player_data.game_id = game_id;
+                    player_data.game_state = PlayerGameState::Playing;
+                    set!(world, (player_data));
+                    let (player_x, player_y) = PLAYER_STARTING_POINT;
+
+                    let mut player = default_player(
+                        player_address, game_id, player_x, player_y, hero
+                    );
+
+                    set!(world, (player));
+                    set!(
+                        world,
+                        (
+                            GamePoints {
+                                game_id, index: game.player_count, player_address, score: 0, 
+                            },
+                        )
+                    );
+
+                    break;
+                }
+            }
+        }
+        fn quit_game(ref world: IWorldDispatcher) {
+            let player_address = get_caller_address();
+            let mut player_data = get!(world, (player_address), (PlayerGameData));
+            assert(player_data.game_state == PlayerGameState::Playing, 'Player not active');
+
+            let mut game = get!(world, (player_data.game_id), (Game));
+            game.player_count -= 1;
+            set!(world, (game));
+
+            player_data.game_id = 0;
+            player_data.game_state = PlayerGameState::None;
+            set!(world, (player_data));
+        }
+
+        fn start_game(ref world: IWorldDispatcher,) {
+            let player_address = get_caller_address();
+            let mut player_data = get!(world, (player_address), (PlayerGameData));
+            assert(player_data.game_state == PlayerGameState::Playing, 'Player not playing');
+            let game_id = player_data.game_id;
 
             let mut x: u32 = 0;
             let mut y: u32 = 0;
@@ -57,6 +111,7 @@ mod actions {
 
             let mut MONSTER_COUNT = MONSTER_TO_START_WITH;
             let mut ITEM_COUNT = ITEM_TO_START_WITH;
+            let mut player = get!(world, (game_id, player_address), (Player));
 
             // loop through every square in 3x3 board
             while x <= 2 {
@@ -70,37 +125,16 @@ mod actions {
                                     x: x,
                                     y: y,
                                     card_id: CardIdEnum::Player,
-                                    hp: 10,
-                                    max_hp: 10,
-                                    shield: 0,
-                                    max_shield: 10,
+                                    hp: player.hp,
+                                    max_hp: player.max_hp,
+                                    shield: player.shield,
+                                    max_shield: player.max_shield,
                                     xp: 0,
                                     tag: TagType::None
                                 },
                             )
                         );
 
-                        let mut player = Player {
-                            game_id,
-                            player,
-                            x: x,
-                            y: y,
-                            hp: 10,
-                            max_hp: 10,
-                            shield: 0,
-                            max_shield: 10,
-                            exp: 0,
-                            total_xp: 0,
-                            level: 1,
-                            high_score: 0,
-                            sequence: 0,
-                            alive: true,
-                            poisoned: 0,
-                            turn: 0,
-                            heroId: hero
-                        };
-                        player.set_init_hero();
-                        set!(world, (player));
                         y += 1;
                         continue;
                     }
@@ -151,8 +185,12 @@ mod actions {
 
 
         // Will update assert 
-        fn move(ref world: IWorldDispatcher, game_id: u32, direction: Direction) {
+        fn move(ref world: IWorldDispatcher, direction: Direction) {
             let player_address = get_caller_address();
+            let mut player_data = get!(world, (player_address), (PlayerGameData));
+            assert(player_data.game_state == PlayerGameState::Playing, 'Player not playing');
+            let game_id = player_data.game_id;
+
             let mut player = get!(world, (game_id, player_address), (Player));
             let old_player_card = get!(world, (game_id, player.x, player.y), (Card));
             // delete!(world, (old_player_card));
@@ -286,10 +324,12 @@ mod actions {
         }
 
 
-        fn use_skill(
-            ref world: IWorldDispatcher, game_id: u32, skill: Skill, direction: Direction
-        ) {
+        fn use_skill(ref world: IWorldDispatcher, skill: Skill, direction: Direction) {
             let player_address = get_caller_address();
+            let mut player_data = get!(world, (player_address), (PlayerGameData));
+            assert(player_data.game_state == PlayerGameState::Playing, 'Player not playing');
+            let game_id = player_data.game_id;
+
             let mut player = get!(world, (game_id, player_address), (Player));
             player.validate_skill(skill);
             let mut player_skill = get!(world, (game_id, player_address, skill), (PlayerSkill));
@@ -302,10 +342,12 @@ mod actions {
         }
 
 
-        fn use_swap_skill(
-            ref world: IWorldDispatcher, game_id: u32, skill: Skill, direction: Direction
-        ) {
+        fn use_swap_skill(ref world: IWorldDispatcher, skill: Skill, direction: Direction) {
             let player_address = get_caller_address();
+            let mut player_data = get!(world, (player_address), (PlayerGameData));
+            assert(player_data.game_state == PlayerGameState::Playing, 'Player not playing');
+            let game_id = player_data.game_id;
+
             let mut player = get!(world, (game_id, player_address), (Player));
             player.validate_skill(skill);
 
@@ -329,8 +371,12 @@ mod actions {
         }
 
 
-        fn use_curse_skill(ref world: IWorldDispatcher, game_id: u32, x: u32, y: u32) {
+        fn use_curse_skill(ref world: IWorldDispatcher, x: u32, y: u32) {
             let player_address = get_caller_address();
+            let mut player_data = get!(world, (player_address), (PlayerGameData));
+            assert(player_data.game_state == PlayerGameState::Playing, 'Player not playing');
+            let game_id = player_data.game_id;
+
             let skill = Skill::Curse;
             let mut player = get!(world, (game_id, player_address), (Player));
             player.validate_skill(skill);
@@ -346,8 +392,12 @@ mod actions {
             set!(world, (player_skill));
         }
 
-        fn level_up(ref world: IWorldDispatcher, game_id: u32, upgrade: u32) {
+        fn level_up(ref world: IWorldDispatcher, upgrade: u32) {
             let player_address = get_caller_address();
+            let mut player_data = get!(world, (player_address), (PlayerGameData));
+            assert(player_data.game_state == PlayerGameState::Playing, 'Player not playing');
+            let game_id = player_data.game_id;
+
             let mut player = get!(world, (game_id, player_address), (Player));
             player.level_up(upgrade);
         }
