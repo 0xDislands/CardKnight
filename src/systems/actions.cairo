@@ -143,6 +143,13 @@ mod actions {
             let mut ITEM_COUNT = ITEM_TO_START_WITH;
             let mut player = get!(world, (game_id, player_address), (Player));
 
+            let (player_x, player_y) = PLAYER_STARTING_POINT;
+            let mut player = default_player(
+                player_address, game_id, player_x, player_y, player.heroId
+            );
+
+            set!(world, (player));
+
             // loop through every square in 3x3 board
             while x <= 2 {
                 while y <= 2 {
@@ -222,6 +229,8 @@ mod actions {
             let game_id = player_data.game_id;
 
             let mut player = get!(world, (game_id, player_address), (Player));
+            assert(player.hp != 0, 'Player is dead');
+
             let old_player_card = get!(world, (game_id, player.x, player.y), (Card));
             // delete!(world, (old_player_card));
             let (next_x, next_y) = match direction {
@@ -361,6 +370,8 @@ mod actions {
             let game_id = player_data.game_id;
 
             let mut player = get!(world, (game_id, player_address), (Player));
+            assert(player.hp != 0, 'Player is dead');
+
             player.validate_skill(skill);
             let mut player_skill = get!(world, (game_id, player_address, skill), (PlayerSkill));
             assert(!is_silent(world, player), 'Silence active');
@@ -409,6 +420,8 @@ mod actions {
 
             let skill = Skill::Curse;
             let mut player = get!(world, (game_id, player_address), (Player));
+            assert(player.hp != 0, 'Player is dead');
+
             player.validate_skill(skill);
 
             let mut player_skill = get!(world, (game_id, player_address, skill), (PlayerSkill));
@@ -429,6 +442,8 @@ mod actions {
             let game_id = player_data.game_id;
 
             let mut player = get!(world, (game_id, player_address), (Player));
+            assert(player.hp != 0, 'Player is dead');
+
             player.level_up(upgrade);
         }
 
@@ -470,7 +485,7 @@ mod actions {
                         break;
                     }
                     array = sorted_scores.span();
-                    array2= sorted_users.span();
+                    array2 = sorted_users.span();
 
                     sorted_scores = array![];
                     sorted_users = array![];
