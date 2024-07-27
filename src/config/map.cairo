@@ -7,3 +7,5 @@ const MAP_AMPLITUDE: u128 = 16; // The lower the value, the highest variation in
 const BASE_HP: u32 = 10;
 const HP_PER_LEVEL: u32 = 5;
 
+// player limit for each game
+const PLAYER_LIMIT: u32 = 5;
