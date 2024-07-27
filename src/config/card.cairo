@@ -1,3 +1,5 @@
+use card_knight::models::card::CardIdEnum;
+
 // Monsters
 const MONSTER1_BASE_HP: u32 = 5;
 const MONSTER1_MULTIPLE: u32 = 2;
@@ -27,3 +29,32 @@ const CHEST_XP: u32 = 1;
 
 // Tags
 const INCREASE_HP_RATIO: u32 = 20; // %20
+
+
+fn card_sequence() -> Array::<CardIdEnum> {
+    let mut card_sequence = ArrayTrait::<CardIdEnum>::new();
+    card_sequence.append(CardIdEnum::Monster1);
+    card_sequence.append(CardIdEnum::ItemHeal);
+    card_sequence.append(CardIdEnum::Monster2);
+    card_sequence.append(CardIdEnum::ItemPoison);
+    card_sequence.append(CardIdEnum::Monster3);
+    card_sequence.append(CardIdEnum::ItemChest);
+    card_sequence.append(CardIdEnum::Monster1);
+    card_sequence.append(CardIdEnum::ItemHeal);
+    card_sequence.append(CardIdEnum::Monster2);
+    card_sequence.append(CardIdEnum::ItemChestMiniGame);
+    card_sequence.append(CardIdEnum::Monster3);
+    card_sequence.append(CardIdEnum::ItemChestEvil);
+    card_sequence.append(CardIdEnum::Monster1);
+    card_sequence.append(CardIdEnum::ItemShield);
+    card_sequence.append(CardIdEnum::Monster2);
+    card_sequence.append(CardIdEnum::Boss1);
+    card_sequence.append(CardIdEnum::ItemChestEvil);
+    card_sequence.append(CardIdEnum::Monster1);
+    card_sequence.append(CardIdEnum::ItemHeal);
+    card_sequence.append(CardIdEnum::Monster2);
+    card_sequence.append(CardIdEnum::ItemChestMiniGame);
+    card_sequence.append(CardIdEnum::Monster3);
+    card_sequence.append(CardIdEnum::ItemChestEvil);
+    card_sequence
+}
