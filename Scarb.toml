@@ -12,7 +12,7 @@ spawn = "./scripts/spawn.sh"
 
 [dependencies]
 dojo = { git = "https://github.com/dojoengine/dojo", tag = "v1.0.0-alpha.11" }
-cubit = { git = "https://github.com/influenceth/cubit.git", rev = "9402f71"}
+cubit = { git = "https://github.com/dojoengine/cubit", branch = "update_to_2.7.0" }
 
 [[target.dojo]]
 
