@@ -7,7 +7,7 @@ use dojo::world::{IWorld, IWorldDispatcher, IWorldDispatcherTrait};
 use card_knight::config::card::{
     MONSTER1_BASE_HP, MONSTER1_MULTIPLE, MONSTER2_BASE_HP, MONSTER2_MULTIPLE, MONSTER3_BASE_HP,
     MONSTER3_MULTIPLE, MONSTER1_XP, MONSTER2_XP, MONSTER3_XP, BOSS_XP, HEAL_XP, POISON_XP,
-    SHIELD_XP, CHEST_XP, POISON_TURN, INCREASE_HP_RATIO
+    SHIELD_XP, CHEST_XP, POISON_TURN, INCREASE_HP_RATIO, card_sequence
 };
 use card_knight::config::map::{MAP_RANGE};
 use card_knight::utils::random_index;
@@ -374,30 +374,7 @@ impl ICardImpl of ICardTrait {
     fn spawn_card(
         world: IWorldDispatcher, game_id: u32, x: u32, y: u32, player: Player
     ) -> (Card, bool) {
-        let mut card_sequence = ArrayTrait::new();
-        card_sequence.append(CardIdEnum::Monster1);
-        card_sequence.append(CardIdEnum::ItemHeal);
-        card_sequence.append(CardIdEnum::Monster2);
-        card_sequence.append(CardIdEnum::ItemPoison);
-        card_sequence.append(CardIdEnum::Monster3);
-        card_sequence.append(CardIdEnum::ItemChest);
-        card_sequence.append(CardIdEnum::Monster1);
-        card_sequence.append(CardIdEnum::ItemHeal);
-        card_sequence.append(CardIdEnum::Monster2);
-        card_sequence.append(CardIdEnum::ItemChestMiniGame);
-        card_sequence.append(CardIdEnum::Monster3);
-        card_sequence.append(CardIdEnum::ItemChestEvil);
-        card_sequence.append(CardIdEnum::Monster1);
-        card_sequence.append(CardIdEnum::ItemShield);
-        card_sequence.append(CardIdEnum::Monster2);
-        card_sequence.append(CardIdEnum::Boss1);
-        card_sequence.append(CardIdEnum::ItemChestEvil);
-        card_sequence.append(CardIdEnum::Monster1);
-        card_sequence.append(CardIdEnum::ItemHeal);
-        card_sequence.append(CardIdEnum::Monster2);
-        card_sequence.append(CardIdEnum::ItemChestMiniGame);
-        card_sequence.append(CardIdEnum::Monster3);
-        card_sequence.append(CardIdEnum::ItemChestEvil);
+        let mut card_sequence = card_sequence();
         let mut sequence = player.sequence;
         if sequence >= card_sequence.len() {
             sequence = 0;
