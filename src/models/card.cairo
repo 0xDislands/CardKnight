@@ -27,7 +27,8 @@ struct Card {
     shield: u32,
     max_shield: u32,
     xp: u32,
-    tag: TagType
+    tag: TagType,
+    flipped: bool
 }
 
 #[derive(Drop, Serde)]
@@ -64,6 +65,7 @@ impl ICardImpl of ICardTrait {
                 let damage = card.hp + card.shield;
                 player.take_damage(damage);
                 player.add_exp(BOSS_XP);
+                Self::flip_cards(world, player.game_id, true);
                 return player;
             },
             CardIdEnum::ItemHeal => {
@@ -96,7 +98,8 @@ impl ICardImpl of ICardTrait {
                         shield: 0,
                         max_shield: 0,
                         xp: HEAL_XP,
-                        tag: TagType::None
+                        tag: TagType::None,
+                        flipped: false,
                     };
                     set!(world, (new_card));
                 } else if (index == 1) {
@@ -111,7 +114,8 @@ impl ICardImpl of ICardTrait {
                         shield: 0,
                         max_shield: 0,
                         xp: POISON_XP,
-                        tag: TagType::None
+                        tag: TagType::None,
+                        flipped: false,
                     };
                     set!(world, (new_card));
                 } else if (index == 2) {
@@ -126,7 +130,8 @@ impl ICardImpl of ICardTrait {
                         shield: card_value,
                         max_shield: 0,
                         xp: SHIELD_XP,
-                        tag: TagType::None
+                        tag: TagType::None,
+                        flipped: false,
                     };
                     set!(world, (new_card));
                 }
@@ -366,7 +371,9 @@ impl ICardImpl of ICardTrait {
         *(neighbour_cards.at(index))
     }
 
-    fn spawn_card(world: IWorldDispatcher, game_id: u32, x: u32, y: u32, player: Player) {
+    fn spawn_card(
+        world: IWorldDispatcher, game_id: u32, x: u32, y: u32, player: Player
+    ) -> (Card, bool) {
         let mut card_sequence = card_sequence();
         let mut sequence = player.sequence;
         if sequence >= card_sequence.len() {
@@ -375,6 +382,7 @@ impl ICardImpl of ICardTrait {
         let card_id = card_sequence.at(sequence);
         let mut new_player = player;
         new_player.sequence = sequence + 1;
+
         set!(world, (new_player));
         let max_hp = {
             match card_id {
@@ -421,10 +429,59 @@ impl ICardImpl of ICardTrait {
             shield: 0,
             max_shield: 0,
             xp: xp,
-            tag: tag_type
+            tag: tag_type,
+            flipped: false,
         };
         set!(world, (card));
+        let is_boss = if (card.card_id == CardIdEnum::Boss1) {
+            true
+        } else {
+            false
+        };
+        if (is_boss) {
+            Self::flip_cards(world, game_id, true);
+        }
+
+        return (card, is_boss);
     }
+
+
+    fn flip_cards(world: IWorldDispatcher, game_id: u32, flip: bool) {
+        let mut x: u32 = 0;
+        let mut y: u32 = 0;
+        while x <= MAP_RANGE {
+            while y <= MAP_RANGE {
+                let mut card = get!(world, (game_id, x, y), (Card));
+                if (card.card_id != CardIdEnum::Boss1 && card.card_id != CardIdEnum::Player) {
+                    card.flipped = flip;
+                    set!(world, (card));
+                }
+
+                y = y + 1;
+            };
+            x = x + 1;
+        };
+    }
+
+
+    fn is_boss_active(world: IWorldDispatcher, game_id: u32, flip: bool) -> bool {
+        let mut is_active = false;
+        let mut x: u32 = 0;
+        let mut y: u32 = 0;
+        while x <= MAP_RANGE {
+            while y <= MAP_RANGE {
+                let mut card = get!(world, (game_id, x, y), (Card));
+                if (card.card_id == CardIdEnum::Boss1) {
+                    is_active = true;
+                    break;
+                }
+                y = y + 1;
+            };
+            x = x + 1;
+        };
+        is_active
+    }
+
 
     fn get_tag(card_id: CardIdEnum, x: u32, y: u32) -> TagType {
         let is_monster = match card_id {

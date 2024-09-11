@@ -20,7 +20,7 @@ mod actions {
     use starknet::{ContractAddress, get_caller_address};
     use card_knight::models::{
         game::{Game, Direction, GameState, TagType},
-        card::{Card, CardIdEnum, ICardImpl, ICardTrait}, player::{Player, IPlayer, Hero}
+        card::{Card, CardIdEnum, ICardImpl, ICardTrait,}, player::{Player, IPlayer, Hero}
     };
     use card_knight::models::skill::{Skill, PlayerSkill, IPlayerSkill};
     use card_knight::models::game::{apply_tag_effects, is_silent};
@@ -75,7 +75,8 @@ mod actions {
                                     shield: 0,
                                     max_shield: 10,
                                     xp: 0,
-                                    tag: TagType::None
+                                    tag: TagType::None,
+                                    flipped: false,
                                 },
                             )
                         );
@@ -120,7 +121,8 @@ mod actions {
                                 shield: 0,
                                 max_shield: 0,
                                 xp: MONSTER1_XP,
-                                tag: TagType::None
+                                tag: TagType::None,
+                                flipped: false,
                             })
                         );
                         MONSTER_COUNT -= 1;
@@ -137,7 +139,8 @@ mod actions {
                                 shield: 0,
                                 max_shield: 0,
                                 xp: HEAL_XP,
-                                tag: TagType::None
+                                tag: TagType::None,
+                                flipped: false,
                             })
                         );
                         ITEM_COUNT -= 1;
@@ -154,6 +157,7 @@ mod actions {
         fn move(ref world: IWorldDispatcher, game_id: u32, direction: Direction) {
             let player_address = get_caller_address();
             let mut player = get!(world, (game_id, player_address), (Player));
+            assert(player.hp != 0, 'Player is dead');
             let old_player_card = get!(world, (game_id, player.x, player.y), (Card));
             // delete!(world, (old_player_card));
             let (next_x, next_y) = match direction {
@@ -204,7 +208,8 @@ mod actions {
                 shield: player.shield,
                 max_shield: player.max_shield,
                 xp: 0,
-                tag: TagType::None
+                tag: TagType::None,
+                flipped: false,
             };
 
             // Move cards after use
@@ -291,6 +296,8 @@ mod actions {
         ) {
             let player_address = get_caller_address();
             let mut player = get!(world, (game_id, player_address), (Player));
+            assert(player.hp != 0, 'Player is dead');
+
             player.validate_skill(skill);
             let mut player_skill = get!(world, (game_id, player_address, skill), (PlayerSkill));
             assert(!is_silent(world, player), 'Silence active');
@@ -331,8 +338,11 @@ mod actions {
 
         fn use_curse_skill(ref world: IWorldDispatcher, game_id: u32, x: u32, y: u32) {
             let player_address = get_caller_address();
+
             let skill = Skill::Curse;
             let mut player = get!(world, (game_id, player_address), (Player));
+            assert(player.hp != 0, 'Player is dead');
+
             player.validate_skill(skill);
 
             let mut player_skill = get!(world, (game_id, player_address, skill), (PlayerSkill));
@@ -349,6 +359,7 @@ mod actions {
         fn level_up(ref world: IWorldDispatcher, game_id: u32, upgrade: u32) {
             let player_address = get_caller_address();
             let mut player = get!(world, (game_id, player_address), (Player));
+            assert(player.hp != 0, 'Player is dead');
             player.level_up(upgrade);
         }
     }
