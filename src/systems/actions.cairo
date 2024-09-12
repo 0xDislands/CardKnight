@@ -162,21 +162,17 @@ mod actions {
             // delete!(world, (old_player_card));
             let (next_x, next_y) = match direction {
                 Direction::Up => {
-                    println!("Moving up");
                     (player.x, player.y + 1)
                 },
                 Direction::Down => {
                     assert!(player.y != 0, "Invalid move");
-                    println!("Moving down");
                     (player.x, player.y - 1)
                 },
                 Direction::Left => {
                     assert!(player.x != 0, "Invalid move");
-                    println!("Moving left");
                     (player.x - 1, player.y)
                 },
                 Direction::Right => {
-                    println!("Moving right");
                     (player.x + 1, player.y)
                 }
             };
@@ -237,7 +233,6 @@ mod actions {
                 };
 
                 while true {
-                    println!("Calculating old_x & old_y");
                     let old_x = if (is_x_pos && x_direction <= x_destination) {
                         x_destination - x_direction
                     } else if (!is_x_pos) {
