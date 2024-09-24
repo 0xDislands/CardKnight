@@ -1,4 +1,5 @@
-// fn move_player(world: &mut IWorldDispatcher, game_id: u32, current_x: u8, current_y: u8, direction: Direction) {
+// fn move_player(world: &mut IWorldDispatcher, game_id: u32, current_x: u8, current_y: u8,
+// direction: Direction) {
 //     let player = get_caller_address();
 //     let (mut x, mut y) = match direction {
 //         Direction::Up => (current_x, current_y + 1),
@@ -7,8 +8,8 @@
 //         Direction::Right => (current_x + 1, current_y),
 //     };
 
-//     // Assuming get_card_at returns an Option<Card> and set_card_at replaces or sets a card at the given position
-//     if let Some(target_card) = get_card_at(world, game_id, x, y) {
+//     // Assuming get_card_at returns an Option<Card> and set_card_at replaces or sets a card at
+//     the given position if let Some(target_card) = get_card_at(world, game_id, x, y) {
 //         // Handle cascading movement
 //     }
 

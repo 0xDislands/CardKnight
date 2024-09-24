@@ -12,7 +12,7 @@ const MONSTER3_MULTIPLE: u32 = 4;
 const BOSS_BASE_HP: u32 = 50;
 const BOSS_MULTIPLE: u32 = 5;
 
-// Heal & Shield 
+// Heal & Shield
 const HEAL_HP: u32 = 5;
 const SHIELD_HP: u32 = 5;
 const POISON_TURN: u32 = 3;
