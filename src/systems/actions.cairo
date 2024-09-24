@@ -153,7 +153,7 @@ mod actions {
         }
 
 
-        // Will update assert 
+        // Will update assert
         fn move(ref world: IWorldDispatcher, game_id: u32, direction: Direction) {
             let player_address = get_caller_address();
             let mut player = get!(world, (game_id, player_address), (Player));
@@ -161,9 +161,7 @@ mod actions {
             let old_player_card = get!(world, (game_id, player.x, player.y), (Card));
             // delete!(world, (old_player_card));
             let (next_x, next_y) = match direction {
-                Direction::Up => {
-                    (player.x, player.y + 1)
-                },
+                Direction::Up => { (player.x, player.y + 1) },
                 Direction::Down => {
                     assert!(player.y != 0, "Invalid move");
                     (player.x, player.y - 1)
@@ -172,17 +170,16 @@ mod actions {
                     assert!(player.x != 0, "Invalid move");
                     (player.x - 1, player.y)
                 },
-                Direction::Right => {
-                    (player.x + 1, player.y)
-                }
+                Direction::Right => { (player.x + 1, player.y) }
             };
             assert!(ICardImpl::is_inside(next_x, next_y) == true, "Invalid move");
             let existingCard = get!(world, (game_id, next_x, next_y), (Card));
-            // Apply Effect was made to handle all kind of card => update apply_effect when more cases are added
+            // Apply Effect was made to handle all kind of card => update apply_effect when more
+            // cases are added
             let result = ICardImpl::apply_effect(world, player, existingCard);
             player = result;
 
-            // if card is ItemChest dont change any position 
+            // if card is ItemChest dont change any position
             if (existingCard.card_id == CardIdEnum::ItemChest) {
                 player.turn += 1;
                 if (player.poisoned != 0) {
