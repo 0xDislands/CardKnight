@@ -35,10 +35,11 @@ struct Player {
     heroId: Hero
 }
 
+
 #[generate_trait]
 impl IPlayerImpl of IPlayer {
     fn level_up(ref self: Player, upgrade: u32) {
-        match self.total_xp {
+        match self.level {
             0 => {},
             1 => {
                 assert(self.total_xp >= level::LEVEL2_XP, 'Cant level up');
@@ -118,8 +119,8 @@ impl IPlayerImpl of IPlayer {
                 damage -= self.shield;
                 self.shield = 0;
             } else {
-                damage = 0;
                 self.shield -= damage;
+                damage = 0;
             };
         }
         self.hp = if (self.hp < damage) {
@@ -131,6 +132,7 @@ impl IPlayerImpl of IPlayer {
             self.alive = false;
         }
     }
+
     fn heal(ref self: Player, value: u32) {
         self.hp = if (self.hp + value > self.max_hp) {
             self.max_hp
@@ -154,19 +156,19 @@ impl IPlayerImpl of IPlayer {
                     skill == Skill::PowerupSlash
                         || skill == Skill::Teleport
                         || skill == Skill::Regeneration,
-                    'Invalid hero skill'
+                    'Invalid Knight skill'
                 );
             },
             Hero::Shaman => {
                 assert(
                     skill == Skill::Hex || skill == Skill::Shuffle || skill == Skill::Meteor,
-                    'Invalid hero skill'
+                    'Invalid Shaman skill'
                 );
             },
             Hero::Vampire => {
                 assert(
                     skill == Skill::LifeSteal || skill == Skill::Teleport || skill == Skill::Curse,
-                    'Invalid hero skill'
+                    'Invalid Vampire skill'
                 );
             },
         }

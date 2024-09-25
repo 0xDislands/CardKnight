@@ -31,13 +31,6 @@ struct Card {
     flipped: bool
 }
 
-#[derive(Drop, Serde)]
-#[dojo::model]
-struct DirectionsAvailable {
-    #[key]
-    player: ContractAddress,
-    directions: Array<Direction>,
-}
 
 #[generate_trait]
 impl ICardImpl of ICardTrait {
@@ -172,25 +165,6 @@ impl ICardImpl of ICardTrait {
         }
     }
 
-    fn get_battle_hp_shield(mut hp: u32, mut shield: u32, mut damage: u32) -> (u32, u32) {
-        if (shield > 0) {
-            if (shield <= damage) {
-                damage -= shield;
-                shield = 0;
-            } else {
-                damage = 0;
-                shield -= damage;
-            };
-        }
-        hp = if (hp < damage) {
-            0
-        } else {
-            hp - damage
-        };
-
-        (hp, shield)
-    }
-
 
     fn is_corner(player: Player) -> bool {
         if player.x == MAP_RANGE || player.y == MAP_RANGE || player.x == 0 || player.y == 0 {
@@ -220,9 +194,7 @@ impl ICardImpl of ICardTrait {
     }
 
 
-    fn move_to_position(
-        world: IWorldDispatcher, game_id: u32, mut old_card: Card, new_x: u32, new_y: u32
-    ) -> Card {
+    fn move_to_position(game_id: u32, mut old_card: Card, new_x: u32, new_y: u32) -> Card {
         old_card.x = new_x;
         old_card.y = new_y;
         return old_card;
@@ -568,7 +540,7 @@ impl ICardImpl of ICardTrait {
             hp
         };
         self.hp += hp;
-        self.max_hp = self.hp;
+        self.max_hp = self.max_hp + hp;
     }
 }
 

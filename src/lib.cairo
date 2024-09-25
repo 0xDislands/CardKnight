@@ -16,3 +16,9 @@ mod config {
     mod player;
 }
 mod utils;
+
+mod tests {
+    //mod test_world;
+    //mod test_player;
+    mod test_card;
+}

@@ -4,59 +4,53 @@ mod tests {
 
     // import world dispatcher
     use dojo::world::{IWorldDispatcher, IWorldDispatcherTrait};
+    use dojo::model::{Model, ModelTest, ModelIndex, ModelEntityTest};
 
     // import test utils
-    use dojo::test_utils::{spawn_test_world, deploy_contract};
+    use dojo::utils::test::deploy_contract;
 
     // import test utils
-    use dojo_starter::{
+    use card_knight::{
         systems::{actions::{actions, IActionsDispatcher, IActionsDispatcherTrait}},
-        models::{position::{Position, Vec2, position}, moves::{Moves, Direction, moves}}
+        models::{
+            game::{Game, Direction, GameState, TagType},
+            card::{Card, CardIdEnum, ICardImpl, ICardTrait,}, player::{Player, IPlayer, Hero},
+            skill::{Skill, PlayerSkill},
+        }
     };
 
 
     #[test]
-    #[available_gas(30000000)]
-    fn test_move() {
+    #[available_gas(3000000000000000)]
+    fn test_game_start() {
         // caller
         let caller = starknet::contract_address_const::<0x0>();
 
-        // models
-        let mut models = array![position::TEST_CLASS_HASH, moves::TEST_CLASS_HASH];
-
         // deploy world with models
-        let world = spawn_test_world(models);
+        let world = spawn_test_world!();
 
         // deploy systems contract
         let contract_address = world
             .deploy_contract('salt', actions::TEST_CLASS_HASH.try_into().unwrap());
         let actions_system = IActionsDispatcher { contract_address };
 
-        // call spawn()
-        actions_system.spawn();
+        // set authorizations
+        world.grant_writer(Model::<Game>::selector(), contract_address);
+        world.grant_writer(Model::<Card>::selector(), contract_address);
+        world.grant_writer(Model::<Player>::selector(), contract_address);
+        world.grant_writer(Model::<PlayerSkill>::selector(), contract_address);
 
-        // call move with direction right
-        actions_system.move(Direction::Right);
+        actions_system.start_game(1, Hero::Knight);
+        let mut player = get!(world, (1, caller), (Player));
+        assert(player.game_id == 1, 'Error gameid');
+        assert(player.player == caller, 'Error player');
+        assert(player.x == 1, 'Error x');
+        assert(player.y == 1, 'Error 1');
+        assert(player.max_hp == 10, 'Error max_hp');
 
-        // Check world state
-        let moves = get!(world, caller, Moves);
-
-        // casting right direction
-        let right_dir_felt: felt252 = Direction::Right.into();
-
-        // check moves
-        assert(moves.remaining == 0, 'moves is wrong');
-
-        // check last direction
-        assert(moves.last_direction.into() == right_dir_felt, 'last direction is wrong');
-
-        // get new_position
-        let new_position = get!(world, caller, Position);
-
-        // check new position x
-        assert(new_position.vec.x == 11, 'position x is wrong');
-
-        // check new position y
-        assert(new_position.vec.y == 10, 'position y is wrong');
+        let mut player_card = get!(world, (1, 1, 1), (Card));
+        assert(player_card.x == 1, 'Error x');
+        assert(player_card.y == 1, 'Error y');
+        assert(player_card.card_id == CardIdEnum::Player, 'Error card_id');
     }
 }

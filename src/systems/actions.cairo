@@ -249,7 +249,7 @@ mod actions {
                     if ICardImpl::is_inside(old_x, old_y) {
                         let card = get!(world, (game_id, old_x, old_y), (Card));
                         let card_move = ICardImpl::move_to_position(
-                            world, game_id, card, x_destination, y_destination
+                            game_id, card, x_destination, y_destination
                         );
                         set!(world, (card_move));
                         x_destination = old_x;
@@ -262,7 +262,7 @@ mod actions {
                 moveCard_y = y_destination;
             } else {
                 let card_move = ICardImpl::move_to_position(
-                    world, game_id, moveCard, old_player_card.x, old_player_card.y
+                    game_id, moveCard, old_player_card.x, old_player_card.y
                 );
                 set!(world, (card_move));
             }
