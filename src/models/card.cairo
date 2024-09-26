@@ -152,7 +152,7 @@ impl ICardImpl of ICardTrait {
             },
             CardIdEnum::ItemShield => {
                 player
-                    .hp =
+                    .shield =
                         if (player.shield + card.shield > player.max_shield) {
                             player.max_shield
                         } else {
@@ -431,6 +431,7 @@ impl ICardImpl of ICardTrait {
 
                 y = y + 1;
             };
+            y = 0;
             x = x + 1;
         };
     }
@@ -449,6 +450,7 @@ impl ICardImpl of ICardTrait {
                 }
                 y = y + 1;
             };
+            y = 0;
             x = x + 1;
         };
         is_active

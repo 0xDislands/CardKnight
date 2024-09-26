@@ -316,7 +316,7 @@ mod actions {
             );
 
             assert(player_skill.is_active(player.level), 'User level not enough');
-            player_skill.use_swap_skill(player, skill, world, direction);
+            player_skill.use_swap_skill(player, world, direction);
             player_skill.last_use = player.turn;
             set!(world, (player_skill));
             player.turn += 1;

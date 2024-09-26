@@ -67,6 +67,7 @@ fn apply_tag_effects(world: IWorldDispatcher, player: Player,) {
 
             y = y + 1;
         };
+        y = 0;
         x = x + 1;
     };
 }
@@ -86,6 +87,7 @@ fn is_silent(world: IWorldDispatcher, player: Player,) -> bool {
 
             y = y + 1;
         };
+        y = 0;
         x = x + 1;
     };
     any_silent

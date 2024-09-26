@@ -70,9 +70,9 @@ impl IPlayerSkillImpl of IPlayerSkill {
                             set!(world, (card));
                         }
                     }
-
                     y = y + 1;
                 };
+                y = 0;
                 x = x + 1;
             };
         } else if (skill == Skill::PowerupSlash) {
@@ -98,13 +98,14 @@ impl IPlayerSkillImpl of IPlayerSkill {
                         set!(world, (card));
                     }
                 }
+                i += 1;
             }
         } else if (skill == Skill::Meteor) {
             assert(*self.last_use + SKILL_CD <= player.turn, 'Skill cooldown');
 
             let mut x: u32 = 0;
             let mut y: u32 = 0;
-            let damage = player.max_hp;
+            let damage = player.max_hp / 4;
             while x <= MAP_RANGE {
                 while y <= MAP_RANGE {
                     let mut card = get!(world, (player.game_id, x, y), (Card));
@@ -119,9 +120,9 @@ impl IPlayerSkillImpl of IPlayerSkill {
                             set!(world, (card));
                         }
                     }
-
-                    y = y + 1;
+                    y += 1;
                 };
+                y = 0;
                 x = x + 1;
             };
         } else if (skill == Skill::Hex) {
@@ -145,7 +146,7 @@ impl IPlayerSkillImpl of IPlayerSkill {
                     game_id: card.game_id,
                     x: next_x,
                     y: next_y,
-                    card_id: CardIdEnum::ItemHeal,
+                    card_id: CardIdEnum::Hex,
                     hp: 0,
                     max_hp: 0,
                     shield: 0,
@@ -216,6 +217,7 @@ impl IPlayerSkillImpl of IPlayerSkill {
                     }
                     y = y + 1;
                 };
+                y = 0;
                 x = x + 1;
             };
         }
@@ -231,13 +233,8 @@ impl IPlayerSkillImpl of IPlayerSkill {
 
 
     fn use_swap_skill(
-        self: @PlayerSkill,
-        mut player: Player,
-        skill: Skill,
-        world: IWorldDispatcher,
-        direction: Direction
+        self: @PlayerSkill, mut player: Player, world: IWorldDispatcher, direction: Direction
     ) {
-        assert(skill == Skill::Teleport, 'Not swap skil');
         assert(*self.last_use + SKILL_CD <= player.turn, 'Skill cooldown');
         let mut player_card = get!(world, (player.game_id, player.x, player.y), (Card));
         let (next_x, next_y) = match direction {
