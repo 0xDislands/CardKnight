@@ -18,7 +18,7 @@ mod config {
 mod utils;
 
 mod tests {
-    mod test_world;
+    mod test_actions;
     mod test_player;
     mod test_card;
     mod test_skill;

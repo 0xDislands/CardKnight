@@ -58,7 +58,7 @@ impl ICardImpl of ICardTrait {
                 let damage = card.hp + card.shield;
                 player.take_damage(damage);
                 player.add_exp(BOSS_XP);
-                Self::flip_cards(world, player.game_id, true);
+                Self::flip_cards(world, player.game_id, false);
                 return player;
             },
             CardIdEnum::ItemHeal => {
@@ -167,7 +167,9 @@ impl ICardImpl of ICardTrait {
 
 
     fn is_corner(player: Player) -> bool {
-        if player.x == MAP_RANGE || player.y == MAP_RANGE || player.x == 0 || player.y == 0 {
+        let is_x_corner = player.x == MAP_RANGE || player.x == 0;
+        let is_y_corner = player.y == MAP_RANGE || player.y == 0;
+        if is_x_corner && is_y_corner {
             return true;
         } else {
             return false;
@@ -549,6 +551,7 @@ impl ICardImpl of ICardTrait {
 
 #[derive(Serde, Drop, Copy, PartialEq, Introspect)]
 enum CardIdEnum {
+    None,
     Player,
     Monster1,
     Monster2,
@@ -566,6 +569,7 @@ enum CardIdEnum {
 impl ImplCardIdEnumIntoFelt252 of Into<CardIdEnum, felt252> {
     fn into(self: CardIdEnum) -> felt252 {
         match self {
+            CardIdEnum::None => 0,
             CardIdEnum::Player => 0,
             CardIdEnum::Monster1 => 1,
             CardIdEnum::Monster2 => 2,

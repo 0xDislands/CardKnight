@@ -8,9 +8,7 @@ trait IActions {
     fn start_game(ref world: IWorldDispatcher, game_id: u32, hero: Hero);
     fn move(ref world: IWorldDispatcher, game_id: u32, direction: Direction);
     fn use_skill(ref world: IWorldDispatcher, game_id: u32, skill: Skill, direction: Direction);
-    fn use_swap_skill(
-        ref world: IWorldDispatcher, game_id: u32, skill: Skill, direction: Direction
-    );
+    fn use_swap_skill(ref world: IWorldDispatcher, game_id: u32, direction: Direction);
     fn use_curse_skill(ref world: IWorldDispatcher, game_id: u32, x: u32, y: u32);
     fn level_up(ref world: IWorldDispatcher, game_id: u32, upgrade: u32);
 }
@@ -56,7 +54,6 @@ mod actions {
             let (player_x, player_y) = PLAYER_STARTING_POINT;
 
             let mut MONSTER_COUNT = MONSTER_TO_START_WITH;
-            let mut ITEM_COUNT = ITEM_TO_START_WITH;
 
             // loop through every square in 3x3 board
             while x <= 2 {
@@ -105,6 +102,7 @@ mod actions {
                         y += 1;
                         continue;
                     }
+
                     let (card_id, value) = monster_type_at_position(x, y);
 
                     if (card_id == 1 && MONSTER_COUNT > 0) {
@@ -126,7 +124,7 @@ mod actions {
                             })
                         );
                         MONSTER_COUNT -= 1;
-                    } else if (ITEM_COUNT > 0) {
+                    } else {
                         set!(
                             world,
                             (Card {
@@ -143,7 +141,6 @@ mod actions {
                                 flipped: false,
                             })
                         );
-                        ITEM_COUNT -= 1;
                     }
                     y += 1;
                 };
@@ -271,6 +268,7 @@ mod actions {
             player.x = existingCard.x;
             player.y = existingCard.y;
             player.turn += 1;
+
             if (player.poisoned != 0) {
                 player.take_damage(1);
                 player.poisoned -= 1;
@@ -278,7 +276,6 @@ mod actions {
             set!(world, (player));
             apply_tag_effects(world, player);
 
-            // spawn new card at the end of the move
             ICardImpl::spawn_card(world, game_id, moveCard_x, moveCard_y, player);
         }
 
@@ -301,11 +298,10 @@ mod actions {
         }
 
 
-        fn use_swap_skill(
-            ref world: IWorldDispatcher, game_id: u32, skill: Skill, direction: Direction
-        ) {
+        fn use_swap_skill(ref world: IWorldDispatcher, game_id: u32, direction: Direction) {
             let player_address = get_caller_address();
             let mut player = get!(world, (game_id, player_address), (Player));
+            let skill = Skill::Teleport;
             player.validate_skill(skill);
 
             let mut player_skill = get!(world, (game_id, player_address, skill), (PlayerSkill));
@@ -317,6 +313,7 @@ mod actions {
 
             assert(player_skill.is_active(player.level), 'User level not enough');
             player_skill.use_swap_skill(player, world, direction);
+            player = get!(world, (game_id, player_address), (Player));
             player_skill.last_use = player.turn;
             set!(world, (player_skill));
             player.turn += 1;
@@ -353,6 +350,7 @@ mod actions {
             let mut player = get!(world, (game_id, player_address), (Player));
             assert(player.hp != 0, 'Player is dead');
             player.level_up(upgrade);
+            set!(world, (player));
         }
     }
 }
