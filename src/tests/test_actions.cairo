@@ -22,7 +22,7 @@ mod tests {
         config::card::{
             MONSTER1_BASE_HP, MONSTER1_MULTIPLE, MONSTER2_BASE_HP, MONSTER2_MULTIPLE,
             MONSTER3_BASE_HP, MONSTER3_MULTIPLE, HEAL_HP, SHIELD_HP, MONSTER1_XP, HEAL_XP,
-            card_sequence, POISON_TURN, SHIELD_XP, POISON_XP,
+            card_sequence, POISON_TURN, SHIELD_XP, POISON_XP, BOSS_XP
         },
     };
 
@@ -461,6 +461,112 @@ mod tests {
         assert(player_card.card_id == CardIdEnum::Player, 'Player card ');
         assert(player_card.x == 1, 'Player card x ');
         assert(player_card.y == 1, 'Player card y ');
+    }
+
+
+    #[test]
+    #[available_gas(3000000000000000)]
+    fn test_move_boss() {
+        // Setup
+        let (world, actions_system, caller) = setup_world_and_actions();
+        let game_id = 1;
+        actions_system.start_game(game_id, Hero::Knight);
+
+        world_setup(world, false);
+
+        // Initial player position
+        let mut initial_player = get!(world, (game_id, caller), (Player));
+        let initial_x = initial_player.x;
+        let initial_y = initial_player.y;
+        initial_player.hp = 30;
+        initial_player.max_hp = 30;
+        initial_player.level = 1;
+        initial_player.sequence = 15;
+
+        set!(world, (initial_player));
+
+        // Move player
+        actions_system.move(game_id, Direction::Down);
+
+        // Check new player position
+        let moved_player = get!(world, (game_id, caller), (Player));
+        assert(moved_player.x == initial_x, 'Player did not move right');
+        assert(moved_player.y == initial_y - 1, 'Player y pos');
+        assert(moved_player.hp == 20, 'Error card hp ');
+        assert(moved_player.max_hp == 30, 'Error max hp');
+        assert(moved_player.exp == MONSTER1_XP, 'Error exp');
+        assert(moved_player.sequence == 16, 'Error sequence');
+
+        // Check if player card moved
+        let player_card = get!(world, (game_id, moved_player.x, moved_player.y), (Card));
+        assert(player_card.card_id == CardIdEnum::Player, 'Player card ');
+        assert(player_card.x == initial_x, 'Player card x ');
+        assert(player_card.y == initial_y - 1, 'Player card y ');
+
+        let mut card_sequence = card_sequence();
+
+        let mut old_pos = get!(world, (game_id, initial_x, initial_y), (Card));
+        assert(old_pos.card_id == CardIdEnum::Monster1, 'Player card ');
+
+        assert(old_pos.max_hp == 10, 'Error old_pos max ');
+        assert(old_pos.hp == 10, 'Error old_pos hp ');
+        assert(old_pos.xp == 2, 'Error old_pos xp ');
+
+        let mut new_card = get!(world, (game_id, 1, 2), (Card));
+        assert(new_card.card_id == CardIdEnum::Boss1, 'Error new_card card_id ');
+        assert(new_card.xp == BOSS_XP, 'Error new_card xp ');
+        assert(new_card.hp == 40, 'Error new_card xp ');
+
+        new_card.x = 1;
+        new_card.y = 1;
+
+        old_pos.x = 1;
+        old_pos.y = 2;
+
+        set!(world, (new_card));
+        set!(world, (old_pos));
+
+        // Check if all cards are flipped
+        let mut x: u32 = 0;
+        let mut y: u32 = 0;
+        while x <= 2 {
+            while y <= 2 {
+                let mut card = get!(world, (game_id, x, y), (Card));
+                if (card.card_id != CardIdEnum::Boss1 && card.card_id != CardIdEnum::Player) {
+                    assert(card.flipped == true, 'Error flipped');
+                }
+                y = y + 1;
+            };
+            y = 0;
+            x = x + 1;
+        };
+
+        let mut moved_player = get!(world, (game_id, caller), (Player));
+        moved_player.hp = 100;
+        moved_player.max_hp = 100;
+        set!(world, (moved_player));
+
+        actions_system.move(game_id, Direction::Up);
+
+        let moved_player = get!(world, (game_id, caller), (Player));
+        assert(moved_player.x == 1, 'Player did not up');
+        assert(moved_player.y == 1, 'Player y pos');
+
+        // Check if all cards are flipped back after boss is defeated
+        let mut x: u32 = 0;
+        let mut y: u32 = 0;
+        while x <= 2 {
+            while y <= 2 {
+                let mut card = get!(world, (game_id, x, y), (Card));
+                if (card.card_id != CardIdEnum::Boss1 && card.card_id != CardIdEnum::Player) {
+                    assert(card.flipped == false, 'Error still flipped');
+                }
+
+                y = y + 1;
+            };
+            y = 0;
+            x = x + 1;
+        };
     }
 
 
