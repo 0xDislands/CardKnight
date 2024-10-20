@@ -35,6 +35,37 @@ struct Player {
     heroId: Hero
 }
 
+#[derive(Copy, Drop, Serde, PartialEq)]
+#[dojo::model]
+struct WeeklyIndex {
+    #[key]
+    week: u64,
+    #[key]
+    player: ContractAddress,
+    index: u128,
+}
+
+#[derive(Copy, Drop, Serde, PartialEq)]
+#[dojo::model]
+struct Scores {
+    // keep weekly scores
+    #[key]
+    week: u64,
+    #[key]
+    index: u128,
+    player: ContractAddress,
+    high_score: u32,
+}
+
+#[derive(Copy, Drop, Serde, PartialEq)]
+#[dojo::model]
+struct TotalWeeklyPlayers {
+    // keep weekly scores
+    #[key]
+    week: u64,
+    total: u128,
+}
+
 
 #[generate_trait]
 impl IPlayerImpl of IPlayer {

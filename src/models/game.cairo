@@ -42,6 +42,20 @@ enum TagType {
     Silent
 }
 
+// set contracts
+// 0 -> second owner
+// 1-> ref contract
+// 2-> reward contract
+
+#[derive(Copy, Drop, Serde)]
+#[dojo::model]
+#[dojo::event]
+struct Contracts {
+    #[key]
+    index: u128,
+    address: ContractAddress,
+}
+
 
 fn apply_tag_effects(world: IWorldDispatcher, player: Player,) {
     let mut x: u32 = 0;

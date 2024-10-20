@@ -1,7 +1,7 @@
 use starknet::ContractAddress;
 use card_knight::models::game::{Direction, TagType};
 use card_knight::models::skill::{Skill, PlayerSkill};
-use card_knight::models::player::{Hero};
+use card_knight::models::player::{Hero, Scores};
 
 #[dojo::interface]
 trait IActions {
@@ -11,17 +11,26 @@ trait IActions {
     fn use_swap_skill(ref world: IWorldDispatcher, game_id: u32, direction: Direction);
     fn use_curse_skill(ref world: IWorldDispatcher, game_id: u32, x: u32, y: u32);
     fn level_up(ref world: IWorldDispatcher, game_id: u32, upgrade: u32);
+    fn set_contract(ref world: IWorldDispatcher, index: u128, new_address: ContractAddress);
+    fn get_total_weekly_players(ref world: IWorldDispatcher, week: u64,) -> u128;
+    fn get_player_weekly_highest_score(
+        ref world: IWorldDispatcher, player: ContractAddress, week: u64,
+    ) -> u32;
+    fn get_weekly_scores(
+        ref world: IWorldDispatcher, player: ContractAddress, week: u64, start: u128, end: u128
+    ) -> Array<Scores>;
 }
 
 #[dojo::contract]
 mod actions {
-    use starknet::{ContractAddress, get_caller_address};
+    use starknet::{ContractAddress, get_caller_address, get_block_timestamp};
     use card_knight::models::{
         game::{Game, Direction, GameState, TagType},
-        card::{Card, CardIdEnum, ICardImpl, ICardTrait,}, player::{Player, IPlayer, Hero}
+        card::{Card, CardIdEnum, ICardImpl, ICardTrait,},
+        player::{Player, IPlayer, Hero, Scores, WeeklyIndex, TotalWeeklyPlayers}
     };
     use card_knight::models::skill::{Skill, PlayerSkill, IPlayerSkill};
-    use card_knight::models::game::{apply_tag_effects, is_silent};
+    use card_knight::models::game::{apply_tag_effects, is_silent, Contracts};
 
     use card_knight::utils::{spawn_coords, monster_type_at_position};
     use card_knight::config::{
@@ -30,6 +39,10 @@ mod actions {
             MONSTER3_BASE_HP, MONSTER3_MULTIPLE, HEAL_HP, SHIELD_HP, MONSTER1_XP, HEAL_XP,
         },
         player::PLAYER_STARTING_POINT, level::{MONSTER_TO_START_WITH, ITEM_TO_START_WITH},
+        config::STRK_RECEIVER,
+    };
+    use card_knight::config::IDislandReward::{
+        IDislandRewardDispatcher, IDislandRewardDispatcherTrait
     };
     use card_knight::config::level::{SKILL_LEVEL, BIG_SKILL_CD,};
     use poseidon::PoseidonTrait;
@@ -37,6 +50,7 @@ mod actions {
 
 
     use super::IActions;
+    const WEEK: u64 = 604800;
 
     #[abi(embed_v0)]
     impl PlayerActionsImpl of IActions<ContractState> {
@@ -275,6 +289,27 @@ mod actions {
             }
             set!(world, (player));
             apply_tag_effects(world, player);
+            if (player.alive == false) {
+                let week = get_block_timestamp() / WEEK;
+                let mut week_index = get!(world, (week, player_address), (WeeklyIndex));
+                if (week_index.index == 0) {
+                    let mut total_players = get!(world, (week,), (TotalWeeklyPlayers));
+                    // Start from 0
+                    week_index.index = total_players.total + 1;
+                    set!(world, (week_index));
+                    total_players.total += 1;
+                    set!(world, (total_players));
+                };
+                let mut scores = get!(world, (week, week_index.index), (Scores));
+                if scores.high_score < player.total_xp {
+                    scores.high_score = player.total_xp;
+                    set!(world, (scores));
+                }
+                // Player is dead game finished transfer xdil
+                let mut rewards = get!(world, 2, (Contracts));
+                IDislandRewardDispatcher { contract_address: rewards.address }
+                    .add_xdil(player.player, player.total_xp.into());
+            }
 
             ICardImpl::spawn_card(world, game_id, moveCard_x, moveCard_y, player);
         }
@@ -351,6 +386,56 @@ mod actions {
             assert(player.hp != 0, 'Player is dead');
             player.level_up(upgrade);
             set!(world, (player));
+        }
+
+        // 0 -> second owner
+        // 1-> core contract
+        // 2-> reward contract
+        fn set_contract(ref world: IWorldDispatcher, index: u128, new_address: ContractAddress) {
+            let strk_receiver: ContractAddress = STRK_RECEIVER.try_into().unwrap();
+            let mut owner = get!(world, 0, (Contracts));
+
+            assert(
+                get_caller_address() == strk_receiver || get_caller_address() == owner.address,
+                'Caller not owner'
+            );
+            let mut contract = get!(world, index, (Contracts));
+            contract.address = new_address;
+            set!(world, (contract));
+        }
+
+        fn get_total_weekly_players(ref world: IWorldDispatcher, week: u64,) -> u128 {
+            let mut total_players = get!(world, (week,), (TotalWeeklyPlayers));
+            total_players.total
+        }
+
+        fn get_player_weekly_highest_score(
+            ref world: IWorldDispatcher, player: ContractAddress, week: u64,
+        ) -> u32 {
+            let mut week_index = get!(world, (week, player), (WeeklyIndex));
+            let mut scores = get!(world, (week, week_index.index), (Scores));
+            scores.high_score
+        }
+
+
+        fn get_weekly_scores(
+            ref world: IWorldDispatcher, player: ContractAddress, week: u64, start: u128, end: u128
+        ) -> Array<Scores> {
+            let mut scores: Array<Scores> = ArrayTrait::new();
+            let mut total_players = get!(world, (week,), (TotalWeeklyPlayers));
+            let mut end_ = if end > total_players.total {
+                total_players.total
+            } else {
+                end
+            };
+
+            let mut i = start;
+            while i <= end_ {
+                let mut score = get!(world, (week, i), (Scores));
+                scores.append(score);
+                i += 1;
+            };
+            scores
         }
     }
 }

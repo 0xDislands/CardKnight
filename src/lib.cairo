@@ -14,6 +14,8 @@ mod config {
     mod level;
     mod map;
     mod player;
+    mod config;
+    mod IDislandReward;
 }
 mod utils;
 
