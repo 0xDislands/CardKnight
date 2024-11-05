@@ -19,6 +19,8 @@ trait IActions {
     fn get_weekly_scores(
         ref world: IWorldDispatcher, player: ContractAddress, week: u64, start: u128, end: u128
     ) -> Array<Scores>;
+
+    fn winner_of_the_week(ref world: IWorldDispatcher, week: u64,) -> ContractAddress;
 }
 
 #[dojo::contract]
@@ -27,7 +29,7 @@ mod actions {
     use card_knight::models::{
         game::{Game, Direction, GameState, TagType},
         card::{Card, CardIdEnum, ICardImpl, ICardTrait,},
-        player::{Player, IPlayer, Hero, Scores, WeeklyIndex, TotalWeeklyPlayers}
+        player::{Player, IPlayer, Hero, Scores, WeeklyIndex, TotalWeeklyPlayers, WeeklyWinner}
     };
     use card_knight::models::skill::{Skill, PlayerSkill, IPlayerSkill};
     use card_knight::models::game::{apply_tag_effects, is_silent, Contracts};
@@ -304,6 +306,13 @@ mod actions {
                 if scores.high_score < player.total_xp {
                     scores.high_score = player.total_xp;
                     set!(world, (scores));
+
+                    let mut weekly_winner = get!(world, (week), (WeeklyWinner));
+                    if (weekly_winner.score < scores.high_score) {
+                        weekly_winner.address = player_address;
+                        weekly_winner.score = scores.high_score;
+                        set!(world, (weekly_winner));
+                    }
                 }
                 // Player is dead game finished transfer xdil
                 let mut rewards = get!(world, 2, (Contracts));
@@ -436,6 +445,11 @@ mod actions {
                 i += 1;
             };
             scores
+        }
+
+        fn winner_of_the_week(ref world: IWorldDispatcher, week: u64,) -> ContractAddress {
+            let mut weekly_winner = get!(world, (week), (WeeklyWinner));
+            weekly_winner.address
         }
     }
 }

@@ -66,6 +66,15 @@ struct TotalWeeklyPlayers {
     total: u128,
 }
 
+#[derive(Copy, Drop, Serde, PartialEq)]
+#[dojo::model]
+struct WeeklyWinner {
+    #[key]
+    week: u64,
+    address: ContractAddress,
+    score: u32
+}
+
 
 #[generate_trait]
 impl IPlayerImpl of IPlayer {
