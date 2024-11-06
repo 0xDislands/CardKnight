@@ -1,5 +1,4 @@
 use starknet::ContractAddress;
-use dojo::world::{IWorld, IWorldDispatcher, IWorldDispatcherTrait};
 use card_knight::config::level::{
     FIRE_SKILL_LEVEL, SKILL_CD, SLASH_SKILL_LEVEL, METEOR_SKILL_LEVEL, SWAP_SKILL_LEVEL,
     SKILL_LEVEL, BIG_SKILL_CD,
@@ -9,6 +8,9 @@ use card_knight::models::game::{Direction, TagType};
 use card_knight::config::map::{MAP_RANGE};
 use card_knight::models::{card::{Card, CardIdEnum, ICardImpl, ICardTrait}, player::Player};
 use card_knight::utils::random_index;
+
+use dojo::model::{ModelStorage, ModelValueStorage};
+use dojo::world::{IWorld, IWorldDispatcher, IWorldDispatcherTrait, WorldStorage};
 
 #[derive(Serde, Drop, Copy, PartialEq, Introspect)]
 enum Skill {
@@ -48,7 +50,7 @@ impl IPlayerSkillImpl of IPlayerSkill {
         self: @PlayerSkill,
         mut player: Player,
         skill: Skill,
-        world: IWorldDispatcher,
+        mut world_storage: WorldStorage,
         direction: Direction
     ) {
         if (skill == Skill::SkillFire) {
@@ -58,16 +60,20 @@ impl IPlayerSkillImpl of IPlayerSkill {
             let mut y: u32 = 0;
             while x <= MAP_RANGE {
                 while y <= MAP_RANGE {
-                    let mut card = get!(world, (player.game_id, x, y), (Card));
+                    let mut card: Card = world_storage
+                        .read_model((player.game_id, x, y)); // Dummy default
+
                     if (card.is_monster() && card.tag != TagType::NoMagic) {
                         card.hp -= card.hp / 4;
                         if (card.hp == 0) {
                             if (card.card_id == CardIdEnum::Boss1) {
-                                ICardImpl::flip_cards(world, player.game_id, false);
+                                ICardImpl::flip_cards(world_storage, player.game_id, false);
                             }
-                            ICardImpl::spawn_card(world, player.game_id, card.x, card.y, player);
+                            ICardImpl::spawn_card(
+                                world_storage, player.game_id, card.x, card.y, player
+                            );
                         } else {
-                            set!(world, (card));
+                            world_storage.write_model(@card);
                         }
                     }
                     y = y + 1;
@@ -78,7 +84,7 @@ impl IPlayerSkillImpl of IPlayerSkill {
         } else if (skill == Skill::PowerupSlash) {
             assert(*self.last_use + SKILL_CD <= player.turn, 'Skill cooldown');
             let mut neighbour_cards: Array<Card> = ICardTrait::get_all_neighbours(
-                world, player.game_id, player.x, player.y
+                world_storage, player.game_id, player.x, player.y
             );
             let arr_len = neighbour_cards.len();
 
@@ -90,12 +96,14 @@ impl IPlayerSkillImpl of IPlayerSkill {
                     let damage = card.max_hp / 4 + 1;
                     if (card.hp <= damage) {
                         if (card.card_id == CardIdEnum::Boss1) {
-                            ICardImpl::flip_cards(world, player.game_id, false);
+                            ICardImpl::flip_cards(world_storage, player.game_id, false);
                         }
-                        ICardImpl::spawn_card(world, player.game_id, card.x, card.y, player);
+                        ICardImpl::spawn_card(
+                            world_storage, player.game_id, card.x, card.y, player
+                        );
                     } else {
                         card.hp = card.hp - damage;
-                        set!(world, (card));
+                        world_storage.write_model(@card);
                     }
                 }
                 i += 1;
@@ -108,16 +116,20 @@ impl IPlayerSkillImpl of IPlayerSkill {
             let damage = player.max_hp / 4;
             while x <= MAP_RANGE {
                 while y <= MAP_RANGE {
-                    let mut card = get!(world, (player.game_id, x, y), (Card));
+                    let mut card: Card = world_storage
+                        .read_model((player.game_id, x, y)); // Dummy default
+
                     if (card.is_monster() && card.tag != TagType::NoMagic) {
                         if (card.hp < damage) {
                             if (card.card_id == CardIdEnum::Boss1) {
-                                ICardImpl::flip_cards(world, player.game_id, false);
+                                ICardImpl::flip_cards(world_storage, player.game_id, false);
                             }
-                            ICardImpl::spawn_card(world, player.game_id, card.x, card.y, player);
+                            ICardImpl::spawn_card(
+                                world_storage, player.game_id, card.x, card.y, player
+                            );
                         } else {
                             card.hp -= damage;
-                            set!(world, (card));
+                            world_storage.write_model(@card);
                         }
                     }
                     y += 1;
@@ -138,7 +150,9 @@ impl IPlayerSkillImpl of IPlayerSkill {
                 Direction::Left => { (player.x - 1, player.y) },
                 Direction::Right => { (player.x + 1, player.y) }
             };
-            let mut card = get!(world, (player.game_id, next_x, next_y), (Card));
+            let mut card: Card = world_storage
+                .read_model((player.game_id, next_x, next_y)); // Dummy default
+
             assert(card.tag != TagType::NoMagic, 'immune to skill');
             assert(card.card_id != CardIdEnum::Boss1, 'Hex cant target boss');
             if (card.is_monster()) {
@@ -155,12 +169,12 @@ impl IPlayerSkillImpl of IPlayerSkill {
                     tag: TagType::None,
                     flipped: false,
                 };
-                set!(world, (new_card));
+                world_storage.write_model(@new_card);
             }
         } else if (skill == Skill::Regeneration) {
             assert(*self.last_use + BIG_SKILL_CD <= player.turn, 'Skill cooldown');
             player.hp = player.max_hp;
-            set!(world, (player));
+            world_storage.write_model(@player);
         } else if (skill == Skill::LifeSteal) {
             assert(*self.last_use + SKILL_CD <= player.turn, 'Skill cooldown');
             assert(
@@ -172,7 +186,8 @@ impl IPlayerSkillImpl of IPlayerSkill {
                 Direction::Left => { (player.x - 1, player.y) },
                 Direction::Right => { (player.x + 1, player.y) }
             };
-            let mut card = get!(world, (player.game_id, next_x, next_y), (Card));
+            let mut card: Card = world_storage
+                .read_model((player.game_id, next_x, next_y)); // Dummy default
             assert(card.tag != TagType::NoMagic, 'immune to skill');
             assert(card.card_id != CardIdEnum::Boss1, 'LifeSteal cant target boss');
             assert(card.is_monster(), 'LifeSteal  target not monster');
@@ -184,12 +199,12 @@ impl IPlayerSkillImpl of IPlayerSkill {
                 player.hp = player.hp + damage;
             }
 
-            set!(world, (player));
+            world_storage.write_model(@player);
             if (card.hp <= damage) {
-                ICardImpl::spawn_card(world, player.game_id, card.x, card.y, player);
+                ICardImpl::spawn_card(world_storage, player.game_id, card.x, card.y, player);
             } else {
                 card.hp = card.hp - damage;
-                set!(world, (card));
+                world_storage.write_model(@card);
             }
         } else if (skill == Skill::Shuffle) {
             assert(*self.last_use + SKILL_CD <= player.turn, 'Skill cooldown');
@@ -205,14 +220,15 @@ impl IPlayerSkillImpl of IPlayerSkill {
                             x + player.y + player.game_id, y + player.y + player.game_id, 3
                         );
                         if (rx != player.x && ry != player.y) {
-                            let mut card = get!(world, (player.game_id, x, y), (Card));
-                            let mut card2 = get!(world, (player.game_id, rx, ry), (Card));
+                            let mut card: Card = world_storage.read_model((player.game_id, x, y));
+                            let mut card2: Card = world_storage
+                                .read_model((player.game_id, rx, ry));
                             card.x = rx;
                             card.y = ry;
                             card2.x = x;
                             card2.y = y;
-                            set!(world, (card));
-                            set!(world, (card));
+                            world_storage.write_model(@card);
+                            world_storage.write_model(@card2);
                         }
                     }
                     y = y + 1;
@@ -222,36 +238,41 @@ impl IPlayerSkillImpl of IPlayerSkill {
             };
         }
     }
-    fn use_curse_skill(self: @PlayerSkill, world: IWorldDispatcher, game_id: u32, x: u32, y: u32) {
-        let mut card = get!(world, (game_id, x, y), (Card));
+    fn use_curse_skill(
+        self: @PlayerSkill, mut world_storage: WorldStorage, game_id: u32, x: u32, y: u32
+    ) {
+        let mut card: Card = world_storage.read_model((game_id, x, y));
         assert(card.tag != TagType::NoMagic, 'immune to skill');
         assert(card.is_monster(), 'Card not monster');
         let damage = card.hp / 2;
         card.hp = card.hp - damage;
-        set!(world, (card));
+        world_storage.write_model(@card);
     }
 
 
     fn use_swap_skill(
-        self: @PlayerSkill, mut player: Player, world: IWorldDispatcher, direction: Direction
+        self: @PlayerSkill,
+        mut player: Player,
+        mut world_storage: WorldStorage,
+        direction: Direction
     ) {
         assert(*self.last_use + SKILL_CD <= player.turn, 'Skill cooldown');
-        let mut player_card = get!(world, (player.game_id, player.x, player.y), (Card));
+        let mut player_card: Card = world_storage.read_model((player.game_id, player.x, player.y));
         let (next_x, next_y) = match direction {
             Direction::Up => { (player.x, player.y + 1) },
             Direction::Down => { (player.x, player.y - 1) },
             Direction::Left => { (player.x - 1, player.y) },
             Direction::Right => { (player.x + 1, player.y) }
         };
-        let mut move_card = get!(world, (player.game_id, next_x, next_y), (Card));
+        let mut move_card: Card = world_storage.read_model((player.game_id, next_x, next_y));
         move_card.x = player_card.x;
         move_card.y = player_card.y;
         player_card.x = next_x;
         player_card.y = next_y;
         player.x = next_x;
         player.y = next_y;
-        set!(world, (move_card));
-        set!(world, (player_card));
-        set!(world, (player));
+        world_storage.write_model(@move_card);
+        world_storage.write_model(@player_card);
+        world_storage.write_model(@player);
     }
 }

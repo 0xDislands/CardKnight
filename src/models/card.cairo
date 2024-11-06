@@ -3,7 +3,6 @@ use card_knight::models::player::{Player, IPlayerImpl};
 use card_knight::models::game::{Direction, TagType};
 use starknet::ContractAddress;
 
-use dojo::world::{IWorld, IWorldDispatcher, IWorldDispatcherTrait};
 use card_knight::config::card::{
     MONSTER1_BASE_HP, MONSTER1_MULTIPLE, MONSTER2_BASE_HP, MONSTER2_MULTIPLE, MONSTER3_BASE_HP,
     MONSTER3_MULTIPLE, MONSTER1_XP, MONSTER2_XP, MONSTER3_XP, BOSS_XP, HEAL_XP, POISON_XP,
@@ -11,6 +10,10 @@ use card_knight::config::card::{
 };
 use card_knight::config::map::{MAP_RANGE};
 use card_knight::utils::random_index;
+
+use dojo::model::{ModelStorage, ModelValueStorage};
+use dojo::world::{IWorld, IWorldDispatcher, IWorldDispatcherTrait, WorldStorage};
+
 
 #[derive(Copy, Drop, Serde, PartialEq)]
 #[dojo::model]
@@ -31,10 +34,9 @@ struct Card {
     flipped: bool
 }
 
-
 #[generate_trait]
 impl ICardImpl of ICardTrait {
-    fn apply_effect(world: IWorldDispatcher, mut player: Player, card: Card) -> Player {
+    fn apply_effect(mut world_storage: WorldStorage, mut player: Player, card: Card) -> Player {
         match card.card_id {
             CardIdEnum::Player => { return player; },
             CardIdEnum::Monster1 => {
@@ -43,13 +45,11 @@ impl ICardImpl of ICardTrait {
                 return player;
             },
             CardIdEnum::Monster2 => {
-                // Handle Monster2 case
                 player.take_damage(card.hp);
                 player.add_exp(MONSTER2_XP);
                 return player;
             },
             CardIdEnum::Monster3 => {
-                // Handle Monster3 case
                 player.take_damage(card.hp);
                 player.add_exp(MONSTER3_XP);
                 return player;
@@ -58,7 +58,7 @@ impl ICardImpl of ICardTrait {
                 let damage = card.hp + card.shield;
                 player.take_damage(damage);
                 player.add_exp(BOSS_XP);
-                Self::flip_cards(world, player.game_id, false);
+                Self::flip_cards(world_storage, player.game_id, false);
                 return player;
             },
             CardIdEnum::ItemHeal => {
@@ -73,7 +73,6 @@ impl ICardImpl of ICardTrait {
                 return player;
             },
             CardIdEnum::ItemChest => {
-                // Handle ItemChest case
                 let index = random_index(player.hp + player.x + card.x, player.y + card.y, 3);
                 let card_value = random_index(
                     player.hp + player.x + card.x, player.y + card.y, player.hp / 2
@@ -94,7 +93,7 @@ impl ICardImpl of ICardTrait {
                         tag: TagType::None,
                         flipped: false,
                     };
-                    set!(world, (new_card));
+                    world_storage.write_model(@new_card);
                 } else if (index == 1) {
                     //  posion
                     let new_card = Card {
@@ -110,7 +109,7 @@ impl ICardImpl of ICardTrait {
                         tag: TagType::None,
                         flipped: false,
                     };
-                    set!(world, (new_card));
+                    world_storage.write_model(@new_card);
                 } else if (index == 2) {
                     //  shield
                     let new_card = Card {
@@ -126,7 +125,7 @@ impl ICardImpl of ICardTrait {
                         tag: TagType::None,
                         flipped: false,
                     };
-                    set!(world, (new_card));
+                    world_storage.write_model(@new_card);
                 }
                 return player;
             },
@@ -207,29 +206,37 @@ impl ICardImpl of ICardTrait {
     // internal functions, might need to finish early so we won't have trouble in db when migrate,
     // which might caused by mismatch data type
     fn get_neighbour_card(
-        world: IWorldDispatcher, game_id: u32, mut x: u32, mut y: u32, direction: Direction
+        world_storage: WorldStorage, game_id: u32, x: u32, y: u32, direction: Direction
     ) -> (bool, Card) {
-        let mut neighbour_card = get!(world, (game_id, x, y), (Card)); // dummy
-        let mut is_inside = Self::is_move_inside(direction, x, y);
+        let mut neighbour_card: Card = world_storage.read_model((game_id, x, y)); // Dummy default
+        let is_inside = Self::is_move_inside(direction, x, y);
 
-        if (!is_inside) {
+        if !is_inside {
             return (is_inside, neighbour_card);
         }
 
         match direction {
-            Direction::Up(()) => { neighbour_card = get!(world, (game_id, x, y + 1), (Card)); },
-            Direction::Down(()) => { neighbour_card = get!(world, (game_id, x, y - 1), (Card)); },
-            Direction::Left(()) => { neighbour_card = get!(world, (game_id, x - 1, y), (Card)); },
-            Direction::Right(()) => { neighbour_card = get!(world, (game_id, x + 1, y), (Card)); }
+            Direction::Up(()) => {
+                neighbour_card = world_storage.read_model((game_id, x, y + 1));
+            },
+            Direction::Down(()) => {
+                neighbour_card = world_storage.read_model((game_id, x, y - 1));
+            },
+            Direction::Left(()) => {
+                neighbour_card = world_storage.read_model((game_id, x - 1, y));
+            },
+            Direction::Right(()) => {
+                neighbour_card = world_storage.read_model((game_id, x + 1, y));
+            }
         }
         (is_inside, neighbour_card)
     }
 
 
     fn get_move_card(
-        world: IWorldDispatcher, game_id: u32, x: u32, y: u32, player: Player
+        mut world_storage: WorldStorage, game_id: u32, x: u32, y: u32, player: Player
     ) -> Card {
-        let card = get!(world, (game_id, x, y), (Card));
+        let mut card: Card = world_storage.read_model((game_id, x, y)); // Dummy default
 
         let mut straightGrid_x = 0;
         let mut straightGrid_y = 0;
@@ -259,11 +266,14 @@ impl ICardImpl of ICardTrait {
         }
 
         if Self::is_inside(straightGrid_x, straightGrid_y) {
-            return get!(world, (game_id, straightGrid_x, straightGrid_y), (Card));
+            let card_: Card = world_storage
+                .read_model((game_id, straightGrid_x, straightGrid_y)); // Dummy default
+
+            return (card_);
         };
 
         let mut neighbour_cards: @Array<Card> = {
-            let mut arr: Array<Card> = Self::get_all_neighbours(world, game_id, x, y);
+            let mut arr: Array<Card> = Self::get_all_neighbours(world_storage, game_id, x, y);
 
             @arr
         };
@@ -346,7 +356,7 @@ impl ICardImpl of ICardTrait {
     }
 
     fn spawn_card(
-        world: IWorldDispatcher, game_id: u32, x: u32, y: u32, player: Player
+        mut world_storage: WorldStorage, game_id: u32, x: u32, y: u32, player: Player
     ) -> (Card, bool) {
         let mut card_sequence = card_sequence();
         let mut sequence = player.sequence;
@@ -357,7 +367,8 @@ impl ICardImpl of ICardTrait {
         let mut new_player = player;
         new_player.sequence = sequence + 1;
 
-        set!(world, (new_player));
+        world_storage.write_model(@new_player);
+
         let max_hp = {
             match card_id {
                 CardIdEnum::Player => 0,
@@ -406,29 +417,29 @@ impl ICardImpl of ICardTrait {
             tag: tag_type,
             flipped: false,
         };
-        set!(world, (card));
+        world_storage.write_model(@card);
         let is_boss = if (card.card_id == CardIdEnum::Boss1) {
             true
         } else {
             false
         };
         if (is_boss) {
-            Self::flip_cards(world, game_id, true);
+            Self::flip_cards(world_storage, game_id, true);
         }
 
         return (card, is_boss);
     }
 
 
-    fn flip_cards(world: IWorldDispatcher, game_id: u32, flip: bool) {
+    fn flip_cards(mut world_storage: WorldStorage, game_id: u32, flip: bool) {
         let mut x: u32 = 0;
         let mut y: u32 = 0;
         while x <= MAP_RANGE {
             while y <= MAP_RANGE {
-                let mut card = get!(world, (game_id, x, y), (Card));
+                let mut card: Card = world_storage.read_model((game_id, x, y)); // Dummy default
                 if (card.card_id != CardIdEnum::Boss1 && card.card_id != CardIdEnum::Player) {
                     card.flipped = flip;
-                    set!(world, (card));
+                    world_storage.write_model(@card);
                 }
 
                 y = y + 1;
@@ -439,13 +450,13 @@ impl ICardImpl of ICardTrait {
     }
 
 
-    fn is_boss_active(world: IWorldDispatcher, game_id: u32, flip: bool) -> bool {
+    fn is_boss_active(world_storage: WorldStorage, game_id: u32, flip: bool) -> bool {
         let mut is_active = false;
         let mut x: u32 = 0;
         let mut y: u32 = 0;
         while x <= MAP_RANGE {
             while y <= MAP_RANGE {
-                let mut card = get!(world, (game_id, x, y), (Card));
+                let mut card: Card = world_storage.read_model((game_id, x, y)); // Dummy default
                 if (card.card_id == CardIdEnum::Boss1) {
                     is_active = true;
                     break;
@@ -495,7 +506,7 @@ impl ICardImpl of ICardTrait {
     }
 
     fn get_all_neighbours(
-        world: IWorldDispatcher, game_id: u32, mut x: u32, mut y: u32,
+        world: WorldStorage, game_id: u32, mut x: u32, mut y: u32,
     ) -> Array<Card> {
         let mut arr: Array<Card> = ArrayTrait::new();
         let (isInsideU, neighbour_up) = Self::get_neighbour_card(

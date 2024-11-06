@@ -1,6 +1,6 @@
 use starknet::ContractAddress;
 
-#[dojo::interface]
-pub trait IDislandReward {
-    fn add_xdil(ref world: IWorldDispatcher, player: ContractAddress, score: u128);
+#[starknet::interface]
+pub trait IDislandReward<T> {
+    fn add_xdil(ref self: T, player: ContractAddress, score: u128);
 }

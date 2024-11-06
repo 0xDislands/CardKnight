@@ -1,8 +1,9 @@
 use starknet::ContractAddress;
-use dojo::world::{IWorld, IWorldDispatcher, IWorldDispatcherTrait};
 use card_knight::config::level;
 use card_knight::models::skill::{Skill, PlayerSkill};
 
+use dojo::model::{ModelStorage, ModelValueStorage};
+use dojo::world::{IWorld, IWorldDispatcher, IWorldDispatcherTrait, WorldStorage};
 
 #[derive(Serde, Drop, Copy, PartialEq, Introspect)]
 enum Hero {
