@@ -1,7 +1,7 @@
 [package]
 cairo-version = "=2.8.4"
 name = "card_knight"
-version = "1.0.0"
+version = "1.0.1"
 
 [cairo]
 sierra-replace-ids = true
@@ -11,7 +11,7 @@ migrate = "sozo build && sozo migrate plan && sozo migrate apply && ./scripts/de
 spawn = "./scripts/spawn.sh"
 
 [dependencies]
-dojo = { git = "https://github.com/dojoengine/dojo", tag = "v1.0.0" }
+dojo = { git = "https://github.com/dojoengine/dojo", tag = "v1.0.1" }
 cubit = { git = "https://github.com/dojoengine/cubit", branch = "update_to_2.7.0" }
 
 
