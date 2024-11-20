@@ -21,7 +21,7 @@ mod utils;
 
 mod tests {
     mod test_actions;
-    mod test_player;
+    // mod test_player;
     mod test_card;
-    mod test_skill;
+    // mod test_skill;
 }

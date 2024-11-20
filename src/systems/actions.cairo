@@ -4,7 +4,7 @@ use card_knight::models::skill::{Skill, PlayerSkill};
 use card_knight::models::player::{Hero, Scores};
 
 #[starknet::interface]
-trait IActions<T> {
+trait ICardKnightActions<T> {
     fn start_game(ref self: T, game_id: u32, hero: Hero);
     fn move(ref self: T, game_id: u32, direction: Direction);
     fn use_skill(ref self: T, game_id: u32, skill: Skill, direction: Direction);
@@ -23,7 +23,7 @@ trait IActions<T> {
 }
 
 #[dojo::contract]
-mod actions {
+mod CardKnightActions {
     use starknet::{ContractAddress, get_caller_address, get_block_timestamp};
     use card_knight::models::{
         game::{Game, Direction, GameState, TagType},
@@ -54,11 +54,11 @@ mod actions {
     use dojo::world::{IWorld, IWorldDispatcher, IWorldDispatcherTrait, WorldStorage};
 
 
-    use super::IActions;
+    use super::ICardKnightActions;
     const WEEK: u64 = 604800;
 
     #[abi(embed_v0)]
-    impl PlayerActionsImpl of IActions<ContractState> {
+    impl PlayerActionsImpl of ICardKnightActions<ContractState> {
         fn start_game(ref self: ContractState, game_id: u32, hero: Hero) {
             let player = get_caller_address();
 

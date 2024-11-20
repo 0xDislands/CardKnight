@@ -3,16 +3,13 @@ mod tests {
     use starknet::class_hash::Felt252TryIntoClassHash;
     use starknet::ContractAddress;
 
-    // import world dispatcher
-    use dojo::world::{IWorldDispatcher, IWorldDispatcherTrait};
-    use dojo::model::{Model, ModelTest, ModelIndex, ModelEntityTest};
-
-    // import test utils
-    use dojo::utils::test::deploy_contract;
-
     // import test utils
     use card_knight::{
-        systems::{actions::{actions, IActionsDispatcher, IActionsDispatcherTrait}},
+        systems::{
+            actions::{
+                CardKnightActions, ICardKnightActionsDispatcher, ICardKnightActionsDispatcherTrait
+            }
+        },
         models::{
             game::{Game, Direction, GameState, TagType},
             card::{Card, CardIdEnum, ICardImpl, ICardTrait,}, player::{Player, IPlayer, Hero},
@@ -20,6 +17,22 @@ mod tests {
         },
         config::level
     };
+
+
+    use dojo::model::{ModelStorage, ModelValueStorage};
+    use dojo::event::EventStorage;
+    use dojo::world::{
+        IWorld, IWorldDispatcher, IWorldDispatcherTrait, WorldStorage, WorldStorageTrait
+    };
+    use dojo_cairo_test::{
+        spawn_test_world, NamespaceDef, TestResource, ContractDefTrait, ContractDef,
+        WorldStorageTestTrait
+    };
+
+    use card_knight::models::game::m_Game;
+    use card_knight::models::card::m_Card;
+    use card_knight::models::player::m_Player;
+    use card_knight::models::skill::m_PlayerSkill;
 
 
     #[test]
