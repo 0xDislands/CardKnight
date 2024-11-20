@@ -7,3 +7,7 @@ assets
 *.db
 
 .vscode
+
+# ignore db of katana & torii
+/katana-db
+*.db
