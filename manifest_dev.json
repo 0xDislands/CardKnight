@@ -1243,8 +1243,8 @@
   },
   "contracts": [
     {
-      "address": "0x27ddc50cc9fa2d30f587d00e7b5782c9a03ab0ee4c218df04a888867e0ab72e",
-      "class_hash": "0x1bc138cc0ea966a8dea1084369fd0eff5a1ce6b0b911a1bb733122600ab976b",
+      "address": "0x6072fc4b36a91f16ba8a7ed30fba8724168286f27cd845e75c3416955fe8ae8",
+      "class_hash": "0x77900572bed58efdea55d2189e2c6219c57220b6df2d4d020bc62483ff0ffae",
       "abi": [
         {
           "type": "impl",
@@ -1732,7 +1732,7 @@
       ],
       "init_calldata": [],
       "tag": "card_knight-CardKnightActions",
-      "selector": "0x389f25994c535ca1482143c37b3409671e9c166fc152539ec473e66669547ec",
+      "selector": "0x26515428751bd3c28ee94007935c314b88aa66656eacdfa6c5d057f401f7d41",
       "systems": [
         "start_game",
         "move",
