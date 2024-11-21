@@ -25,4 +25,4 @@ github = "https://github.com/dojoengine/dojo-starter"
 telegram = "https://t.me/dojoengine"
 
 [init_call_args]
-"ns-CoreWheelAction" = ["0x078f70F1ce52F09360DD1d04ad27bdE431098B6285153aED16a74B3620253b65", "0x4cee81bd765fb2d37fd5170ec5e7858a736bbc2448190073a5577d849e1cdb3"]
+"card_knight-CardKnightActions" = ["0x078f70F1ce52F09360DD1d04ad27bdE431098B6285153aED16a74B3620253b65", "0x4cee81bd765fb2d37fd5170ec5e7858a736bbc2448190073a5577d849e1cdb3"]
