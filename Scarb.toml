@@ -14,6 +14,8 @@ spawn = "./scripts/spawn.sh"
 dojo = { git = "https://github.com/dojoengine/dojo", tag = "v1.0.1" }
 cubit = { git = "https://github.com/dojoengine/cubit", branch = "update_to_2.7.0" }
 
+[dev-dependencies]
+dojo_cairo_test = { git = "https://github.com/dojoengine/dojo.git", tag = "v1.0.1" }
 
 [tool.dojo]
 initializer_class_hash = "0xbeef"
