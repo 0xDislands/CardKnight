@@ -1,8 +1,8 @@
 {
   "world": {
     "class_hash": "0x79d9ce84b97bcc2a631996c3100d57966fc2f5b061fb1ec4dfd0040976bcac6",
-    "address": "0x70058e3886cb7411e8a77db90ee3dd453ac16b763b30bd99b3c8440fe42056e",
-    "seed": "dojo_examples",
+    "address": "0x595c03b89691f73853579f91863b09baeef6e0d132361d4d08212f339f03424",
+    "seed": "card_knight",
     "name": "Card Knight",
     "entrypoints": [
       "uuid",
@@ -1243,7 +1243,7 @@
   },
   "contracts": [
     {
-      "address": "0x6072fc4b36a91f16ba8a7ed30fba8724168286f27cd845e75c3416955fe8ae8",
+      "address": "0x52cbd13f5878155a0d6204a73d2fbd69ba5103fbe0be9934e5798dad83a9f04",
       "class_hash": "0x77900572bed58efdea55d2189e2c6219c57220b6df2d4d020bc62483ff0ffae",
       "abi": [
         {

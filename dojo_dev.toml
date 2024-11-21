@@ -4,7 +4,7 @@ description = "The official Dojo Starter guide, the quickest and most streamline
 cover_uri = "file://assets/cover.png"
 icon_uri = "file://assets/icon.png"
 website = "https://github.com/dojoengine/dojo-starter"
-seed = "dojo_examples"
+seed = "card_knight"
 
 
 [namespace]
@@ -15,7 +15,7 @@ rpc_url = "http://localhost:5050/"
 # Default account for katana with seed = 0
 account_address = "0x127fd5f1fe78a71f8bcd1fec63e3fe2f0486b6ecd5c86a0466c3a21fa5cfcec"
 private_key = "0xc5b2fcab997346f3ea1c00b002ecf6f382c5f9c9659a3894eb783c5320f912"
-world_address = "0x70058e3886cb7411e8a77db90ee3dd453ac16b763b30bd99b3c8440fe42056e"
+world_address = "0x0595c03b89691f73853579f91863b09baeef6e0d132361d4d08212f339f03424"
 
 
 [socials]
