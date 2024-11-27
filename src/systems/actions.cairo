@@ -63,13 +63,10 @@ mod actions {
             let player = get_caller_address();
 
             let mut world = self.world(@"card_knight");
+            let mut game: Game = world.read_model(game_id, player);
+            game.game_state = GameState::Playing;
 
-            world
-                .write_model(
-                    @Game {
-                        game_id: game_id, player, highest_score: 0, game_state: GameState::Playing
-                    }
-                );
+            world.write_model(@game);
 
             let mut x: u32 = 0;
             let mut y: u32 = 0;
@@ -332,9 +329,7 @@ mod actions {
                     }
                 }
                 // Player is dead game finished transfer xdil
-                let mut rewards: Contracts = world.read_model(2);
-                IDislandRewardDispatcher { contract_address: rewards.address }
-                    .add_xdil(player.player, player.total_xp.into());
+
             }
 
             ICardImpl::spawn_card(world, game_id, moveCard_x, moveCard_y, player);
