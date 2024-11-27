@@ -63,7 +63,7 @@ mod actions {
             let player = get_caller_address();
 
             let mut world = self.world(@"card_knight");
-            let mut game: Game = world.read_model(game_id, player);
+            let mut game: Game = world.read_model((game_id, player));
             game.game_state = GameState::Playing;
 
             world.write_model(@game);
