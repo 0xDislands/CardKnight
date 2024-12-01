@@ -57,6 +57,18 @@ mod actions {
     use super::IActions;
     const WEEK: u64 = 604800;
 
+    // The only requirement is that the function is named `dojo_init`.
+    fn dojo_init(ref self: ContractState, core: ContractAddress, rewards: ContractAddress) {
+        let mut world = self.world(@"core_wheel");
+        let mut contract: Contracts = world.read_model(2);
+        contract.address = rewards;
+        world.write_model(@contract);
+        let mut contract: Contracts = world.read_model(1);
+        contract.address = core;
+        world.write_model(@contract);
+    }
+
+
     #[abi(embed_v0)]
     impl PlayerActionsImpl of IActions<ContractState> {
         fn start_game(ref self: ContractState, game_id: u32, hero: Hero) {
