@@ -1,7 +1,7 @@
 {
   "world": {
     "class_hash": "0x79d9ce84b97bcc2a631996c3100d57966fc2f5b061fb1ec4dfd0040976bcac6",
-    "address": "0x70058e3886cb7411e8a77db90ee3dd453ac16b763b30bd99b3c8440fe42056e",
+    "address": "0x595c03b89691f73853579f91863b09baeef6e0d132361d4d08212f339f03424",
     "seed": "card_knight",
     "name": "Card Knight",
     "entrypoints": [
@@ -1243,8 +1243,8 @@
   },
   "contracts": [
     {
-      "address": "0x4370e7d2e366ab8251857be19ca809f98f6875f7c0d802882bdb96ac3e01f5a",
-      "class_hash": "0x78b27bcb4853ccaab7d354150f535ca4d5dbff0bb30984876db30c5dc737855",
+      "address": "0x44778b7169e6dbdcf569e3429e04fb42b9d7474252874ef7ca3d931d33e33a3",
+      "class_hash": "0x8e1788e41a70bdef82d72eea26aa664c8dfd0bf820bcdb0f3a7a5f756cb59d",
       "abi": [
         {
           "type": "impl",
@@ -1295,6 +1295,22 @@
               "state_mutability": "view"
             }
           ]
+        },
+        {
+          "type": "function",
+          "name": "dojo_init",
+          "inputs": [
+            {
+              "name": "core",
+              "type": "core::starknet::contract_address::ContractAddress"
+            },
+            {
+              "name": "rewards",
+              "type": "core::starknet::contract_address::ContractAddress"
+            }
+          ],
+          "outputs": [],
+          "state_mutability": "external"
         },
         {
           "type": "impl",
@@ -1616,13 +1632,6 @@
           ]
         },
         {
-          "type": "function",
-          "name": "dojo_init",
-          "inputs": [],
-          "outputs": [],
-          "state_mutability": "view"
-        },
-        {
           "type": "impl",
           "name": "WorldProviderImpl",
           "interface_name": "dojo::contract::components::world_provider::IWorldProvider"
@@ -1730,10 +1739,14 @@
           ]
         }
       ],
-      "init_calldata": [],
+      "init_calldata": [
+        "0x078f70F1ce52F09360DD1d04ad27bdE431098B6285153aED16a74B3620253b65",
+        "0x4cee81bd765fb2d37fd5170ec5e7858a736bbc2448190073a5577d849e1cdb3"
+      ],
       "tag": "card_knight-actions",
       "selector": "0x3a97a51ed5c818eab7d47f5df7b792728192a54fa28a28461cf22e6dfcfd5dd",
       "systems": [
+        "dojo_init",
         "start_game",
         "move",
         "use_skill",

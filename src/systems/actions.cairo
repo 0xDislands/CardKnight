@@ -59,7 +59,7 @@ mod actions {
 
     // The only requirement is that the function is named `dojo_init`.
     fn dojo_init(ref self: ContractState, core: ContractAddress, rewards: ContractAddress) {
-        let mut world = self.world(@"core_wheel");
+        let mut world = self.world(@"card_knight");
         let mut contract: Contracts = world.read_model(2);
         contract.address = rewards;
         world.write_model(@contract);
@@ -468,7 +468,6 @@ mod actions {
             self: @ContractState, player: ContractAddress, week: u64, start: u128, end: u128
         ) -> Array<Scores> {
             let mut scores: Array<Scores> = ArrayTrait::new();
-
             let mut world = self.world(@"card_knight");
             let mut total_players: TotalWeeklyPlayers = world.read_model(week);
 
@@ -479,9 +478,11 @@ mod actions {
             };
 
             let mut i = start;
-            while i <= end_ {
+            loop {
+                if i > end_ {
+                    break;
+                }
                 let mut score: Scores = world.read_model((week, i));
-
                 scores.append(score);
                 i += 1;
             };
