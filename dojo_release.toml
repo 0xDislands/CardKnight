@@ -10,3 +10,7 @@ default = "card_knight"
 rpc_url = "https://free-rpc.nethermind.io/sepolia-juno/"
 account_address = "0x016bd5d7a71842258f61ae93c647833495eeb4a2d1b93925b30afd35495bfbb1"
 private_key = "0x581be315f91ff849daa0ed4ceeba8d7e1ce908bcb0f15dac765407b0b511f7"
+
+
+[writers]
+"card_knight" = ["card_knight-actions"]
