@@ -1,7 +1,7 @@
 {
   "world": {
-    "class_hash": "0x79d9ce84b97bcc2a631996c3100d57966fc2f5b061fb1ec4dfd0040976bcac6",
-    "address": "0x595c03b89691f73853579f91863b09baeef6e0d132361d4d08212f339f03424",
+    "class_hash": "0x45575a88cc5cef1e444c77ce60b7b4c9e73a01cbbe20926d5a4c72a94011410",
+    "address": "0x5855afd8c591bf0a04e6e15b217aa496f6b329805871481e77d98202dd2f4f",
     "seed": "card_knight",
     "name": "Card Knight",
     "entrypoints": [
@@ -92,6 +92,10 @@
           {
             "name": "metadata_uri",
             "type": "core::byte_array::ByteArray"
+          },
+          {
+            "name": "metadata_hash",
+            "type": "core::felt252"
           }
         ]
       },
@@ -1002,6 +1006,11 @@
             "name": "uri",
             "type": "core::byte_array::ByteArray",
             "kind": "data"
+          },
+          {
+            "name": "hash",
+            "type": "core::felt252",
+            "kind": "data"
           }
         ]
       },
@@ -1243,7 +1252,7 @@
   },
   "contracts": [
     {
-      "address": "0x44778b7169e6dbdcf569e3429e04fb42b9d7474252874ef7ca3d931d33e33a3",
+      "address": "0x786eaedd6eadf69326e58b314eba2f0680e27d8ff68c2f3f4acc102d3ae3ed8",
       "class_hash": "0x8e1788e41a70bdef82d72eea26aa664c8dfd0bf820bcdb0f3a7a5f756cb59d",
       "abi": [
         {
