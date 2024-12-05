@@ -11,8 +11,7 @@ seed = "card_knight"
 default = "card_knight"
 
 [env]
-rpc_url = "http://localhost:5050/"
-# Default account for katana with seed = 0
+rpc_url = "https://api.cartridge.gg/x/dislands/katana"
 account_address = "0x127fd5f1fe78a71f8bcd1fec63e3fe2f0486b6ecd5c86a0466c3a21fa5cfcec"
 private_key = "0xc5b2fcab997346f3ea1c00b002ecf6f382c5f9c9659a3894eb783c5320f912"
 world_address = "0x0595c03b89691f73853579f91863b09baeef6e0d132361d4d08212f339f03424"
@@ -27,7 +26,7 @@ telegram = "https://t.me/dojoengine"
 
 
 [init_call_args]
-"card_knight-actions" = ["0x078f70F1ce52F09360DD1d04ad27bdE431098B6285153aED16a74B3620253b65", "0x4cee81bd765fb2d37fd5170ec5e7858a736bbc2448190073a5577d849e1cdb3"]
+"card_knight-actions" = ["0x7b93dab08e15d4848d312ef702fdfcc4db9f54b5115a442b04b05ab36be20b2", "0x161189779fa12e274e675bd655a0d4081a82ffd50c7035b3cc640e854fac96b"]
 
 [writers]
 "card_knight" = ["card_knight-actions"]
