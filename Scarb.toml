@@ -23,3 +23,7 @@ allowed-libfuncs-list.name = "experimental"
 sierra = true
 casm = false
 build-external-contracts = ["dojo::world::world_contract::world"]
+
+# Custom profiles for -P {profile-name}
+# Example: sozo build -P slot -> this will use the dojo_slot.toml file
+[profile.slot]
