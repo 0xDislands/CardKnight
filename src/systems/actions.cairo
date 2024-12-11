@@ -20,6 +20,7 @@ trait IActions<T> {
     ) -> Array<Scores>;
 
     fn winner_of_the_week(self: @T, week: u64,) -> ContractAddress;
+    fn hero_skills(self: @T, hero: Hero,) -> (Skill, Skill, Skill);
 }
 
 #[dojo::contract]
@@ -493,6 +494,16 @@ mod actions {
             let mut world = self.world(@"card_knight");
             let mut weekly_winner: WeeklyWinner = world.read_model(week);
             weekly_winner.address
+        }
+
+        fn hero_skills(self: @ContractState, hero: Hero,) -> (Skill, Skill, Skill) {
+            if (hero == Hero::Knight) {
+                (Skill::PowerupSlash, Skill::Teleport, Skill::Regeneration)
+            } else if (hero == Hero::Shaman) {
+                (Skill::Hex, Skill::Shuffle, Skill::Meteor)
+            } else {
+                (Skill::LifeSteal, Skill::Teleport, Skill::Curse)
+            }
         }
     }
 }
