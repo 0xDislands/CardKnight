@@ -60,15 +60,15 @@ mod actions {
 
     // TODO test fails when activated
     // The only requirement is that the function is named `dojo_init`.
-    //   fn dojo_init(ref self: ContractState, core: ContractAddress, rewards: ContractAddress) {
-    //       let mut world = self.world(@"card_knight");
-    //       let mut contract: Contracts = world.read_model(2);
-    //       contract.address = rewards;
-    //       world.write_model(@contract);
-    //       let mut contract: Contracts = world.read_model(1);
-    //       contract.address = core;
-    //       world.write_model(@contract);
-    //  }
+       fn dojo_init(ref self: ContractState, core: ContractAddress, rewards: ContractAddress) {
+           let mut world = self.world(@"card_knight");
+           let mut contract: Contracts = world.read_model(2);
+           contract.address = rewards;
+           world.write_model(@contract);
+           let mut contract: Contracts = world.read_model(1);
+           contract.address = core;
+           world.write_model(@contract);
+      }
 
     #[abi(embed_v0)]
     impl PlayerActionsImpl of IActions<ContractState> {
