@@ -1252,8 +1252,8 @@
   },
   "contracts": [
     {
-      "address": "0x786eaedd6eadf69326e58b314eba2f0680e27d8ff68c2f3f4acc102d3ae3ed8",
-      "class_hash": "0x8e1788e41a70bdef82d72eea26aa664c8dfd0bf820bcdb0f3a7a5f756cb59d",
+      "address": "0x4f9f1337fc29939a83fc397368c1945a1a8f2bbacd48a702c577d1f1cbe8e56",
+      "class_hash": "0x5ed452fbc5a86b039dae79fd8718dae42fef3c1880bcc45f5f887b7910c9e16",
       "abi": [
         {
           "type": "impl",
@@ -1637,6 +1637,22 @@
                 }
               ],
               "state_mutability": "view"
+            },
+            {
+              "type": "function",
+              "name": "hero_skills",
+              "inputs": [
+                {
+                  "name": "hero",
+                  "type": "card_knight::models::player::Hero"
+                }
+              ],
+              "outputs": [
+                {
+                  "type": "(card_knight::models::skill::Skill, card_knight::models::skill::Skill, card_knight::models::skill::Skill)"
+                }
+              ],
+              "state_mutability": "view"
             }
           ]
         },
@@ -1749,8 +1765,8 @@
         }
       ],
       "init_calldata": [
-        "0x078f70F1ce52F09360DD1d04ad27bdE431098B6285153aED16a74B3620253b65",
-        "0x4cee81bd765fb2d37fd5170ec5e7858a736bbc2448190073a5577d849e1cdb3"
+        "0x7b93dab08e15d4848d312ef702fdfcc4db9f54b5115a442b04b05ab36be20b2",
+        "0x161189779fa12e274e675bd655a0d4081a82ffd50c7035b3cc640e854fac96b"
       ],
       "tag": "card_knight-actions",
       "selector": "0x3a97a51ed5c818eab7d47f5df7b792728192a54fa28a28461cf22e6dfcfd5dd",
