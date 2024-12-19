@@ -21,6 +21,8 @@ trait IActions<T> {
 
     fn winner_of_the_week(self: @T, week: u64,) -> ContractAddress;
     fn hero_skills(self: @T, hero: Hero,) -> (Skill, Skill, Skill);
+    fn levelUpWaiting(self: @T, user: ContractAddress,) -> bool;
+    fn levelUpOptions(self: @T, user: ContractAddress,) -> (ByteArray, ByteArray);
 }
 
 #[dojo::contract]
@@ -47,6 +49,7 @@ mod actions {
         IDislandRewardDispatcher, IDislandRewardDispatcherTrait
     };
     use card_knight::config::level::{SKILL_LEVEL, BIG_SKILL_CD,};
+    use card_knight::config::level;
     use poseidon::PoseidonTrait;
     use hash::HashStateTrait;
 
@@ -60,15 +63,15 @@ mod actions {
 
     // TODO test fails when activated
     // The only requirement is that the function is named `dojo_init`.
-       fn dojo_init(ref self: ContractState, core: ContractAddress, rewards: ContractAddress) {
-           let mut world = self.world(@"card_knight");
-           let mut contract: Contracts = world.read_model(2);
-           contract.address = rewards;
-           world.write_model(@contract);
-           let mut contract: Contracts = world.read_model(1);
-           contract.address = core;
-           world.write_model(@contract);
-      }
+    fn dojo_init(ref self: ContractState, core: ContractAddress, rewards: ContractAddress) {
+        let mut world = self.world(@"card_knight");
+        let mut contract: Contracts = world.read_model(2);
+        contract.address = rewards;
+        world.write_model(@contract);
+        let mut contract: Contracts = world.read_model(1);
+        contract.address = core;
+        world.write_model(@contract);
+    }
 
     #[abi(embed_v0)]
     impl PlayerActionsImpl of IActions<ContractState> {
@@ -188,6 +191,8 @@ mod actions {
 
             let mut world = self.world(@"card_knight");
             let mut player: Player = world.read_model((game_id, player_address));
+
+            assert(self.levelUpWaiting(player_address) == false, 'Level up waiting');
 
             assert(player.hp != 0, 'Player is dead');
             let mut old_player_card: Card = world.read_model((game_id, player.x, player.y));
@@ -503,6 +508,117 @@ mod actions {
                 (Skill::Hex, Skill::Shuffle, Skill::Meteor)
             } else {
                 (Skill::LifeSteal, Skill::Teleport, Skill::Curse)
+            }
+        }
+
+        fn levelUpWaiting(self: @ContractState, user: ContractAddress,) -> bool {
+            let mut world = self.world(@"card_knight");
+            let mut player: Player = world.read_model((0, user));
+            let level = player.level;
+
+            let result = match level {
+                0 => false,
+                1 => { if player.total_xp >= level::LEVEL2_XP {
+                    true
+                } else {
+                    false
+                } },
+                2 => { if player.total_xp >= level::LEVEL3_XP {
+                    true
+                } else {
+                    false
+                } },
+                3 => { if player.total_xp >= level::LEVEL4_XP {
+                    true
+                } else {
+                    false
+                } },
+                4 => { if player.total_xp >= level::LEVEL5_XP {
+                    true
+                } else {
+                    false
+                } },
+                5 => { if player.total_xp >= level::LEVEL6_XP {
+                    true
+                } else {
+                    false
+                } },
+                _ => false
+            };
+            result
+        }
+
+        fn levelUpOptions(self: @ContractState, user: ContractAddress,) -> (ByteArray, ByteArray) {
+            let mut world = self.world(@"card_knight");
+            let mut player: Player = world.read_model((0, user));
+            let level = player.level;
+
+            match level {
+                0 => {
+                    let option1: ByteArray = "";
+                    let option2: ByteArray = "";
+                    (option1, option2)
+                },
+                1 => {
+                    if player.total_xp >= level::LEVEL2_XP {
+                        let option1: ByteArray = "+20% Max HP";
+                        let option2: ByteArray = "Heal 40% of max HP";
+                        (option1, option2)
+                    } else {
+                        let option1: ByteArray = "";
+                        let option2: ByteArray = "";
+                        (option1, option2)
+                    }
+                },
+                2 => {
+                    if player.total_xp >= level::LEVEL3_XP {
+                        let option1: ByteArray = "+20% Max Armor";
+                        let option2: ByteArray = "Full Heal";
+                        (option1, option2)
+                    } else {
+                        let option1: ByteArray = "";
+                        let option2: ByteArray = "";
+                        (option1, option2)
+                    }
+                },
+                3 => {
+                    if player.total_xp >= level::LEVEL4_XP {
+                        let option1: ByteArray = "+30% Max HP";
+                        let option2: ByteArray = "Heal 60% of max HP";
+                        (option1, option2)
+                    } else {
+                        let option1: ByteArray = "";
+                        let option2: ByteArray = "";
+                        (option1, option2)
+                    }
+                },
+                4 => {
+                    if player.total_xp >= level::LEVEL5_XP {
+                        let option1: ByteArray = "+30% Max Armor";
+                        let option2: ByteArray = "Full Heal";
+                        (option1, option2)
+                    } else {
+                        let option1: ByteArray = "";
+                        let option2: ByteArray = "";
+                        (option1, option2)
+                    }
+                },
+                5 => {
+                    if player.total_xp >= level::LEVEL6_XP {
+                        let option1: ByteArray = "+30% Max HP";
+                        let option2: ByteArray = "Full Heal";
+                        (option1, option2)
+                    } else {
+                        let option1: ByteArray = "";
+                        let option2: ByteArray = "";
+                        (option1, option2)
+                    }
+                },
+                _ => {
+                    let option1: ByteArray = "";
+                    let option2: ByteArray = "";
+                    (option1, option2)
+                }
             }
         }
     }
