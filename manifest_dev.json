@@ -1252,8 +1252,8 @@
   },
   "contracts": [
     {
-      "address": "0x1417d8c233d21d4ce52d3854ccdb74ccaf17f35a56f02edb26cc3801dc7ca08",
-      "class_hash": "0x5ed452fbc5a86b039dae79fd8718dae42fef3c1880bcc45f5f887b7910c9e16",
+      "address": "0x33dc99b4cf435b9529d5074b0a9a40402df5ffe632e51ef9015da3af6bcb4ad",
+      "class_hash": "0x1da9395cc09673749e83121f9d1c7af3d67889c4c953f2f8d493bed0c9c66ee",
       "abi": [
         {
           "type": "impl",
@@ -1431,6 +1431,20 @@
             {
               "name": "high_score",
               "type": "core::integer::u32"
+            }
+          ]
+        },
+        {
+          "type": "enum",
+          "name": "core::bool",
+          "variants": [
+            {
+              "name": "False",
+              "type": "()"
+            },
+            {
+              "name": "True",
+              "type": "()"
             }
           ]
         },
@@ -1650,6 +1664,38 @@
               "outputs": [
                 {
                   "type": "(card_knight::models::skill::Skill, card_knight::models::skill::Skill, card_knight::models::skill::Skill)"
+                }
+              ],
+              "state_mutability": "view"
+            },
+            {
+              "type": "function",
+              "name": "levelUpWaiting",
+              "inputs": [
+                {
+                  "name": "user",
+                  "type": "core::starknet::contract_address::ContractAddress"
+                }
+              ],
+              "outputs": [
+                {
+                  "type": "core::bool"
+                }
+              ],
+              "state_mutability": "view"
+            },
+            {
+              "type": "function",
+              "name": "levelUpOptions",
+              "inputs": [
+                {
+                  "name": "user",
+                  "type": "core::starknet::contract_address::ContractAddress"
+                }
+              ],
+              "outputs": [
+                {
+                  "type": "(core::byte_array::ByteArray, core::byte_array::ByteArray)"
                 }
               ],
               "state_mutability": "view"

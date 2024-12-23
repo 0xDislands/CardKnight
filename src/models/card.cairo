@@ -6,7 +6,7 @@ use starknet::ContractAddress;
 use card_knight::config::card::{
     MONSTER1_BASE_HP, MONSTER1_MULTIPLE, MONSTER2_BASE_HP, MONSTER2_MULTIPLE, MONSTER3_BASE_HP,
     MONSTER3_MULTIPLE, MONSTER1_XP, MONSTER2_XP, MONSTER3_XP, BOSS_XP, HEAL_XP, POISON_XP,
-    SHIELD_XP, CHEST_XP, POISON_TURN, INCREASE_HP_RATIO, card_sequence
+    BOSS_BASE_HP, SHIELD_XP, CHEST_XP, POISON_TURN, INCREASE_HP_RATIO, card_sequence
 };
 use card_knight::config::map::{MAP_RANGE};
 use card_knight::utils::random_index;
@@ -372,10 +372,10 @@ impl ICardImpl of ICardTrait {
         let max_hp = {
             match card_id {
                 CardIdEnum::Player => 0,
-                CardIdEnum::Monster1 => { player.level * MONSTER1_BASE_HP * MONSTER1_MULTIPLE },
-                CardIdEnum::Monster2 => { player.level * MONSTER2_BASE_HP * MONSTER2_MULTIPLE },
-                CardIdEnum::Monster3 => { player.level * MONSTER3_BASE_HP * MONSTER3_MULTIPLE },
-                CardIdEnum::Boss1 => 40,
+                CardIdEnum::Monster1 => { MONSTER1_BASE_HP * MONSTER1_MULTIPLE },
+                CardIdEnum::Monster2 => { MONSTER2_BASE_HP * MONSTER2_MULTIPLE },
+                CardIdEnum::Monster3 => { MONSTER3_BASE_HP * MONSTER3_MULTIPLE },
+                CardIdEnum::Boss1 => BOSS_BASE_HP,
                 CardIdEnum::ItemHeal => 0,
                 CardIdEnum::ItemPoison => 0,
                 CardIdEnum::ItemChest => 0,
