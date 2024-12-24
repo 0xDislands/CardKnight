@@ -21,8 +21,8 @@ trait IActions<T> {
 
     fn winner_of_the_week(self: @T, week: u64,) -> ContractAddress;
     fn hero_skills(self: @T, hero: Hero,) -> (Skill, Skill, Skill);
-    fn levelUpWaiting(self: @T, user: ContractAddress,) -> bool;
-    fn levelUpOptions(self: @T, user: ContractAddress,) -> (ByteArray, ByteArray);
+    fn levelUpWaiting(self: @T, user: ContractAddress, game_id: u32,) -> bool;
+    fn levelUpOptions(self: @T, user: ContractAddress, game_id: u32,) -> (ByteArray, ByteArray);
 }
 
 #[dojo::contract]
@@ -192,7 +192,7 @@ mod actions {
             let mut world = self.world(@"card_knight");
             let mut player: Player = world.read_model((game_id, player_address));
 
-            assert(self.levelUpWaiting(player_address) == false, 'Level up waiting');
+            assert(self.levelUpWaiting(player_address, game_id) == false, 'Level up waiting');
 
             assert(player.hp != 0, 'Player is dead');
             let mut old_player_card: Card = world.read_model((game_id, player.x, player.y));
@@ -511,46 +511,28 @@ mod actions {
             }
         }
 
-        fn levelUpWaiting(self: @ContractState, user: ContractAddress,) -> bool {
+        fn levelUpWaiting(self: @ContractState, user: ContractAddress, game_id: u32) -> bool {
             let mut world = self.world(@"card_knight");
-            let mut player: Player = world.read_model((0, user));
+            let mut player: Player = world.read_model((game_id, user));
             let level = player.level;
 
             let result = match level {
                 0 => false,
-                1 => { if player.total_xp >= level::LEVEL2_XP {
-                    true
-                } else {
-                    false
-                } },
-                2 => { if player.total_xp >= level::LEVEL3_XP {
-                    true
-                } else {
-                    false
-                } },
-                3 => { if player.total_xp >= level::LEVEL4_XP {
-                    true
-                } else {
-                    false
-                } },
-                4 => { if player.total_xp >= level::LEVEL5_XP {
-                    true
-                } else {
-                    false
-                } },
-                5 => { if player.total_xp >= level::LEVEL6_XP {
-                    true
-                } else {
-                    false
-                } },
+                1 => player.total_xp >= level::LEVEL2_XP,
+                2 => player.total_xp >= level::LEVEL3_XP,
+                3 => player.total_xp >= level::LEVEL4_XP,
+                4 => player.total_xp >= level::LEVEL5_XP,
+                5 => player.total_xp >= level::LEVEL6_XP,
                 _ => false
             };
             result
         }
 
-        fn levelUpOptions(self: @ContractState, user: ContractAddress,) -> (ByteArray, ByteArray) {
+        fn levelUpOptions(
+            self: @ContractState, user: ContractAddress, game_id: u32,
+        ) -> (ByteArray, ByteArray) {
             let mut world = self.world(@"card_knight");
-            let mut player: Player = world.read_model((0, user));
+            let mut player: Player = world.read_model((game_id, user));
             let level = player.level;
 
             match level {
