@@ -448,7 +448,7 @@ mod tests {
         assert(player_card.y == initial_y, 'Player card y ');
 
         let mut card_sequence = card_sequence();
-        let card_id = card_sequence.at(0);
+        let _card_id = card_sequence.at(0);
 
         let old_pos: Card = world.read_model((game_id, initial_x, initial_y));
         assert(old_pos.card_id == CardIdEnum::Monster1, 'Player card ');
@@ -645,7 +645,7 @@ mod tests {
         assert(player_card.x == initial_x, 'Player card x ');
         assert(player_card.y == initial_y - 1, 'Player card y ');
 
-        let mut card_sequence = card_sequence();
+        let mut _card_sequence = card_sequence();
 
         let mut old_pos: Card = world.read_model((game_id, initial_x, initial_y));
         assert(old_pos.card_id == CardIdEnum::Monster1, 'Player card ');
@@ -657,7 +657,7 @@ mod tests {
         let mut new_card: Card = world.read_model((game_id, 1, 2));
         assert(new_card.card_id == CardIdEnum::Boss1, 'Error new_card card_id ');
         assert(new_card.xp == BOSS_XP, 'Error new_card xp ');
-        assert(new_card.hp == 40, 'Error new_card xp ');
+        assert(new_card.hp == 20, 'Error new_card xp ');
 
         new_card.x = 1;
         new_card.y = 1;
@@ -780,6 +780,73 @@ mod tests {
 
         // Move player
         card_knight.move(game_id, Direction::Right);
+    }
+
+
+    #[test]
+    #[available_gas(3000000000000000)]
+    fn test_levelup_view() {
+        // Setup
+        // caller
+        let caller = starknet::contract_address_const::<0x0>();
+
+        let ndef = namespace_def();
+        let mut world = spawn_test_world([ndef].span());
+        world.sync_perms_and_inits(contract_defs());
+
+        let (actions_system_addr, _) = world.dns(@"actions").unwrap();
+        let card_knight = IActionsDispatcher { contract_address: actions_system_addr };
+
+        world_setup(world, false);
+
+        let mut player = player_setup(caller);
+        world.write_model(@player);
+        let game_id = 1;
+        card_knight.start_game(game_id, Hero::Knight);
+        world_setup(world, false);
+
+        // Initial player position
+        let mut initial_player: Player = world.read_model((game_id, caller));
+        initial_player.total_xp = 0;
+        initial_player.exp = 0;
+        initial_player.level = 1;
+
+        world.write_model(@initial_player);
+
+        let is_level = card_knight.levelUpWaiting(caller, 1);
+        assert(is_level == false, 'Error level up');
+
+        initial_player.total_xp = 3;
+        initial_player.exp = 3;
+        initial_player.level = 1;
+
+        world.write_model(@initial_player);
+        let is_level = card_knight.levelUpWaiting(caller, 1);
+        assert(is_level == true, 'Error level up');
+
+        let (op1, op2) = card_knight.levelUpOptions(caller, 1);
+        assert(op1 == "+20% Max HP", 'Error op1');
+        assert(op2 == "Heal 40% of max HP", 'Error op1');
+
+        initial_player.total_xp = 4;
+        initial_player.exp = 4;
+        initial_player.level = 2;
+        world.write_model(@initial_player);
+
+        let is_level = card_knight.levelUpWaiting(caller, 1);
+        assert(is_level == false, 'Error level up');
+
+        initial_player.total_xp = 12;
+        initial_player.exp = 4;
+        initial_player.level = 3;
+        world.write_model(@initial_player);
+
+        let is_level = card_knight.levelUpWaiting(caller, 1);
+        assert(is_level == true, 'Error level up');
+
+        let (op1, op2) = card_knight.levelUpOptions(caller, 1);
+        assert(op1 == "+30% Max HP", 'Error op1');
+        assert(op2 == "Heal 60% of max HP", 'Error op1');
     }
 
 
