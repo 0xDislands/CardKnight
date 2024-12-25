@@ -116,8 +116,8 @@ mod actions {
                             player,
                             x: x,
                             y: y,
-                            hp: 10,
-                            max_hp: 10,
+                            hp: 20,
+                            max_hp: 20,
                             shield: 0,
                             max_shield: 10,
                             exp: 0,
@@ -231,20 +231,7 @@ mod actions {
                 return ();
             };
 
-            // delete!(world, (existingCard));
-            let new_player_card = Card {
-                game_id,
-                x: next_x,
-                y: next_y,
-                card_id: CardIdEnum::Player,
-                hp: player.hp,
-                max_hp: player.max_hp,
-                shield: player.shield,
-                max_shield: player.max_shield,
-                xp: 0,
-                tag: TagType::None,
-                flipped: false,
-            };
+            let mut old_player_card: Card = world.read_model((game_id, player.x, player.y));
 
             // Move cards after use
             let moveCard = ICardImpl::get_move_card(
@@ -308,6 +295,21 @@ mod actions {
                 );
                 world.write_model(@card_move);
             }
+
+            // delete!(world, (existingCard));
+            let new_player_card = Card {
+                game_id,
+                x: next_x,
+                y: next_y,
+                card_id: CardIdEnum::Player,
+                hp: player.hp,
+                max_hp: player.max_hp,
+                shield: player.shield,
+                max_shield: player.max_shield,
+                xp: player.exp,
+                tag: TagType::None,
+                flipped: old_player_card.flipped,
+            };
             world.write_model(@new_player_card);
 
             player.x = existingCard.x;
@@ -401,6 +403,23 @@ mod actions {
                 player.take_damage(1);
                 player.poisoned -= 1;
             }
+
+            let mut old_player_card: Card = world.read_model((game_id, player.x, player.y));
+            let new_player_card = Card {
+                game_id,
+                x: player.x,
+                y: player.y,
+                card_id: CardIdEnum::Player,
+                hp: player.hp,
+                max_hp: player.max_hp,
+                shield: player.shield,
+                max_shield: player.max_shield,
+                xp: player.exp,
+                tag: TagType::None,
+                flipped: old_player_card.flipped,
+            };
+            world.write_model(@new_player_card);
+
             world.write_model(@player);
         }
 
@@ -432,6 +451,22 @@ mod actions {
             let mut player: Player = world.read_model((game_id, player_address));
             assert(player.hp != 0, 'Player is dead');
             player.level_up(upgrade);
+            let mut old_player_card: Card = world.read_model((game_id, player.x, player.y));
+
+            let new_player_card = Card {
+                game_id,
+                x: player.x,
+                y: player.y,
+                card_id: CardIdEnum::Player,
+                hp: player.hp,
+                max_hp: player.max_hp,
+                shield: player.shield,
+                max_shield: player.max_shield,
+                xp: player.exp,
+                tag: TagType::None,
+                flipped: old_player_card.flipped,
+            };
+            world.write_model(@new_player_card);
             world.write_model(@player);
         }
 

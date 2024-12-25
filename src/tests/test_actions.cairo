@@ -62,7 +62,7 @@ mod tests {
         assert(player.player == caller, 'Wrong player address');
         assert(player.heroId == hero, 'Wrong hero type');
         assert(player.hp == 10, 'Wrong initial HP');
-        assert(player.max_hp == 10, 'Wrong max HP');
+        assert(player.max_hp == 20, 'Wrong max HP');
         assert(player.level == 1, 'Wrong initial level');
 
         let mut player_card: Card = world.read_model((1, 1, 1));
@@ -399,6 +399,79 @@ mod tests {
 
     #[test]
     #[available_gas(3000000000000000)]
+    fn level_up2() {
+        // caller
+        let caller = starknet::contract_address_const::<0x0>();
+
+        let ndef = namespace_def();
+        let mut world = spawn_test_world([ndef].span());
+        world.sync_perms_and_inits(contract_defs());
+
+        let (actions_system_addr, _) = world.dns(@"actions").unwrap();
+        let card_knight = IActionsDispatcher { contract_address: actions_system_addr };
+
+        world_setup(world, false);
+
+        let mut player = player_setup(caller);
+        world.write_model(@player);
+
+        let hero = Hero::Vampire;
+        card_knight.start_game(1, hero);
+
+        world_setup(world, false);
+
+        let mut player: Player = world.read_model((1, caller));
+        player.hp = 5;
+        player.max_hp = 20;
+        player.level = 1;
+        player.total_xp = 10;
+        world.write_model(@player);
+        card_knight.level_up(1, 1,);
+        let mut player: Player = world.read_model((1, caller));
+        assert(player.max_hp == 22, 'Error max_hp1');
+        assert(player.hp == 5, 'Error hp');
+        assert(player.level == 2, 'Error level');
+    }
+
+    #[test]
+    #[available_gas(3000000000000000)]
+    fn level_up3() {
+        // caller
+        let caller = starknet::contract_address_const::<0x0>();
+
+        let ndef = namespace_def();
+        let mut world = spawn_test_world([ndef].span());
+        world.sync_perms_and_inits(contract_defs());
+
+        let (actions_system_addr, _) = world.dns(@"actions").unwrap();
+        let card_knight = IActionsDispatcher { contract_address: actions_system_addr };
+
+        world_setup(world, false);
+
+        let mut player = player_setup(caller);
+        world.write_model(@player);
+
+        let hero = Hero::Vampire;
+        card_knight.start_game(1, hero);
+
+        world_setup(world, false);
+
+        let mut player: Player = world.read_model((1, caller));
+        player.hp = 5;
+        player.max_hp = 20;
+        player.level = 1;
+        player.total_xp = 10;
+        world.write_model(@player);
+        card_knight.level_up(1, 2,);
+        let mut player: Player = world.read_model((1, caller));
+        assert(player.max_hp == 20, 'Error max_hp1');
+        assert(player.hp == 9, 'Error hp');
+        assert(player.level == 2, 'Error level');
+    }
+
+
+    #[test]
+    #[available_gas(3000000000000000)]
     fn test_move() {
         // Setup
         // caller
@@ -446,6 +519,9 @@ mod tests {
         assert(player_card.card_id == CardIdEnum::Player, 'Player card ');
         assert(player_card.x == initial_x + 1, 'Player card x ');
         assert(player_card.y == initial_y, 'Player card y ');
+        assert(player_card.hp == 20, 'Player card y ');
+        assert(player_card.max_hp == 30, 'Player max_hp ');
+        assert(player_card.xp == MONSTER1_XP, 'Player max_hp ');
 
         let mut card_sequence = card_sequence();
         let _card_id = card_sequence.at(0);

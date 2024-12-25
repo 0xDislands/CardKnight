@@ -192,7 +192,7 @@ mod tests {
         assert(player.player == caller, 'Error player');
         assert(player.x == 1, 'Error x');
         assert(player.y == 1, 'Error 1');
-        assert(player.max_hp == 10, 'Error max_hp');
+        assert(player.max_hp == 20, 'Error max_hp');
 
         let mut player_card: Card = world.read_model((1, 1, 1));
         assert(player_card.x == 1, 'Error x');
