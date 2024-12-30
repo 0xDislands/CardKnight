@@ -639,6 +639,7 @@ mod tests {
 
         let mut player_skill: PlayerSkill = world.read_model((1, caller, Skill::SkillFire));
         player.turn = 0;
+        player_skill.last_use = 3;
         player_skill.use_skill(player, Skill::SkillFire, world, Direction::Up);
     }
 

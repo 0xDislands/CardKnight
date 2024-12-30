@@ -20,7 +20,6 @@ enum Skill {
     Regeneration,
     LifeSteal,
     Shuffle,
-    UnfairTrade,
     Curse,
     SkillFire,
     Meteor,
@@ -54,7 +53,9 @@ impl IPlayerSkillImpl of IPlayerSkill {
         direction: Direction
     ) {
         if (skill == Skill::SkillFire) {
-            assert(*self.last_use + SKILL_CD <= player.turn, 'Skill cooldown');
+            assert(
+                *self.last_use == 0 || *self.last_use + SKILL_CD <= player.turn, 'Skill cooldown'
+            );
 
             let mut x: u32 = 0;
             let mut y: u32 = 0;
@@ -82,7 +83,9 @@ impl IPlayerSkillImpl of IPlayerSkill {
                 x = x + 1;
             };
         } else if (skill == Skill::PowerupSlash) {
-            assert(*self.last_use + SKILL_CD <= player.turn, 'Skill cooldown');
+            assert(
+                *self.last_use == 0 || *self.last_use + SKILL_CD <= player.turn, 'Skill cooldown'
+            );
             let mut neighbour_cards: Array<Card> = ICardTrait::get_all_neighbours(
                 world_storage, player.game_id, player.x, player.y
             );
@@ -109,7 +112,9 @@ impl IPlayerSkillImpl of IPlayerSkill {
                 i += 1;
             }
         } else if (skill == Skill::Meteor) {
-            assert(*self.last_use + SKILL_CD <= player.turn, 'Skill cooldown');
+            assert(
+                *self.last_use == 0 || *self.last_use + SKILL_CD <= player.turn, 'Skill cooldown'
+            );
 
             let mut x: u32 = 0;
             let mut y: u32 = 0;
@@ -138,7 +143,9 @@ impl IPlayerSkillImpl of IPlayerSkill {
                 x = x + 1;
             };
         } else if (skill == Skill::Hex) {
-            assert(*self.last_use + SKILL_CD <= player.turn, 'Skill cooldown');
+            assert(
+                *self.last_use == 0 || *self.last_use + SKILL_CD <= player.turn, 'Skill cooldown'
+            );
 
             assert(
                 ICardImpl::is_move_inside(direction, player.x, player.y), 'Invalid skil direction'
@@ -172,11 +179,16 @@ impl IPlayerSkillImpl of IPlayerSkill {
                 world_storage.write_model(@new_card);
             }
         } else if (skill == Skill::Regeneration) {
-            assert(*self.last_use + BIG_SKILL_CD <= player.turn, 'Skill cooldown');
+            assert(
+                *self.last_use == 0 || *self.last_use + BIG_SKILL_CD <= player.turn,
+                'Skill cooldown'
+            );
             player.hp = player.max_hp;
             world_storage.write_model(@player);
         } else if (skill == Skill::LifeSteal) {
-            assert(*self.last_use + SKILL_CD <= player.turn, 'Skill cooldown');
+            assert(
+                *self.last_use == 0 || *self.last_use + SKILL_CD <= player.turn, 'Skill cooldown'
+            );
             assert(
                 ICardImpl::is_move_inside(direction, player.x, player.y), 'Invalid skil direction'
             );
@@ -207,7 +219,9 @@ impl IPlayerSkillImpl of IPlayerSkill {
                 world_storage.write_model(@card);
             }
         } else if (skill == Skill::Shuffle) {
-            assert(*self.last_use + SKILL_CD <= player.turn, 'Skill cooldown');
+            assert(
+                *self.last_use == 0 || *self.last_use + SKILL_CD <= player.turn, 'Skill cooldown'
+            );
             let mut x: u32 = 0;
             let mut y: u32 = 0;
             while x <= MAP_RANGE {

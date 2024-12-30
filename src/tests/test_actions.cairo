@@ -232,6 +232,106 @@ mod tests {
 
     #[test]
     #[available_gas(3000000000000000)]
+    fn test_use_skill2() {
+        // caller
+        let caller = starknet::contract_address_const::<0x0>();
+
+        let ndef = namespace_def();
+        let mut world = spawn_test_world([ndef].span());
+        world.sync_perms_and_inits(contract_defs());
+
+        let (actions_system_addr, _) = world.dns(@"actions").unwrap();
+        let card_knight = IActionsDispatcher { contract_address: actions_system_addr };
+
+        world_setup(world, false);
+
+        let mut player = player_setup(caller);
+        world.write_model(@player);
+
+        let hero = Hero::Knight;
+        card_knight.start_game(1, hero);
+
+        let mut player: Player = world.read_model((1, caller));
+        player.hp = 5;
+        player.max_hp = 10;
+        player.level = 2;
+        player.turn = 2;
+
+        world.write_model(@player);
+
+        let mut player_skill: PlayerSkill = world.read_model((1, caller, Skill::Regeneration));
+        assert(player_skill.last_use == 0, 'Error last_use');
+
+        card_knight.use_skill(1, Skill::Regeneration, Direction::Up);
+
+        let mut player: Player = world.read_model((1, caller));
+        assert(player.hp == 10, 'Error hp');
+
+        let mut player_skill: PlayerSkill = world.read_model((1, caller, Skill::Regeneration));
+        assert(player_skill.last_use == player.turn, 'Error last_use2');
+
+        let mut player: Player = world.read_model((1, caller));
+        player.hp = 10;
+        player.max_hp = 10;
+        player.level = 2;
+        player.turn = 7;
+        world.write_model(@player);
+
+        card_knight.use_skill(1, Skill::Regeneration, Direction::Up);
+
+        let mut player: Player = world.read_model((1, caller));
+        assert(player.hp == 10, 'Error hp');
+
+        let mut player_skill: PlayerSkill = world.read_model((1, caller, Skill::Regeneration));
+        assert(player_skill.last_use == player.turn, 'Error last_use2');
+    }
+
+    #[test]
+    #[should_panic(expected: ('Skill cooldown', 'ENTRYPOINT_FAILED'))]
+    #[available_gas(3000000000000000)]
+    fn test_use_skill2_panic() {
+        // caller
+        let caller = starknet::contract_address_const::<0x0>();
+
+        let ndef = namespace_def();
+        let mut world = spawn_test_world([ndef].span());
+        world.sync_perms_and_inits(contract_defs());
+
+        let (actions_system_addr, _) = world.dns(@"actions").unwrap();
+        let card_knight = IActionsDispatcher { contract_address: actions_system_addr };
+
+        world_setup(world, false);
+
+        let mut player = player_setup(caller);
+        world.write_model(@player);
+
+        let hero = Hero::Knight;
+        card_knight.start_game(1, hero);
+
+        let mut player: Player = world.read_model((1, caller));
+        player.hp = 5;
+        player.max_hp = 10;
+        player.level = 2;
+        player.turn = 2;
+
+        world.write_model(@player);
+
+        let mut player_skill: PlayerSkill = world.read_model((1, caller, Skill::Regeneration));
+        assert(player_skill.last_use == 0, 'Error last_use');
+
+        card_knight.use_skill(1, Skill::Regeneration, Direction::Up);
+
+        let mut player: Player = world.read_model((1, caller));
+        assert(player.hp == 10, 'Error hp');
+
+        let mut player_skill: PlayerSkill = world.read_model((1, caller, Skill::Regeneration));
+        assert(player_skill.last_use == player.turn, 'Error last_use2');
+
+        card_knight.use_skill(1, Skill::Regeneration, Direction::Up);
+    }
+
+    #[test]
+    #[available_gas(3000000000000000)]
     fn test_swap_skill() {
         // caller
         let caller = starknet::contract_address_const::<0x0>();

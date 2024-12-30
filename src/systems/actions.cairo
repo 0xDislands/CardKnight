@@ -454,7 +454,10 @@ mod actions {
             let mut player_skill: PlayerSkill = world.read_model((game_id, player_address, skill));
             assert(!is_silent(world, player), 'Silence active');
             assert(x < 3 && y < 3, 'Position not valid');
-            assert(player_skill.last_use + BIG_SKILL_CD <= player.turn, 'Skill cooldown');
+            assert(
+                player_skill.last_use == 0 || player_skill.last_use + BIG_SKILL_CD <= player.turn,
+                'Skill cooldown'
+            );
 
             assert(player_skill.is_active(player.level), 'User level not enough');
             player_skill.use_curse_skill(world, player.game_id, x, y);
