@@ -1252,8 +1252,8 @@
   },
   "contracts": [
     {
-      "address": "0x33dc99b4cf435b9529d5074b0a9a40402df5ffe632e51ef9015da3af6bcb4ad",
-      "class_hash": "0x1da9395cc09673749e83121f9d1c7af3d67889c4c953f2f8d493bed0c9c66ee",
+      "address": "0x2b4d8338583617b6d94fc3d8c279212f8b34f24819530a7149782ff0d9f407a",
+      "class_hash": "0x15a5b563263bb17dab5a0771210044136371df5e8b5d2a1f59e94d441d6f073",
       "abi": [
         {
           "type": "impl",
@@ -1675,6 +1675,10 @@
                 {
                   "name": "user",
                   "type": "core::starknet::contract_address::ContractAddress"
+                },
+                {
+                  "name": "game_id",
+                  "type": "core::integer::u32"
                 }
               ],
               "outputs": [
@@ -1691,6 +1695,10 @@
                 {
                   "name": "user",
                   "type": "core::starknet::contract_address::ContractAddress"
+                },
+                {
+                  "name": "game_id",
+                  "type": "core::integer::u32"
                 }
               ],
               "outputs": [

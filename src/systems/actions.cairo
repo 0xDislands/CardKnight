@@ -373,6 +373,23 @@ mod actions {
             player_skill.use_skill(player, skill, world, direction);
             player_skill.last_use = player.turn;
             world.write_model(@player_skill);
+
+            let mut player: Player = world.read_model((game_id, player_address));
+            let mut old_player_card: Card = world.read_model((game_id, player.x, player.y));
+            let new_player_card = Card {
+                game_id,
+                x: player.x,
+                y: player.y,
+                card_id: CardIdEnum::Player,
+                hp: player.hp,
+                max_hp: player.max_hp,
+                shield: player.shield,
+                max_shield: player.max_shield,
+                xp: player.exp,
+                tag: TagType::None,
+                flipped: old_player_card.flipped,
+            };
+            world.write_model(@new_player_card);
         }
 
 
@@ -451,6 +468,7 @@ mod actions {
             let mut player: Player = world.read_model((game_id, player_address));
             assert(player.hp != 0, 'Player is dead');
             player.level_up(upgrade);
+
             let mut old_player_card: Card = world.read_model((game_id, player.x, player.y));
 
             let new_player_card = Card {

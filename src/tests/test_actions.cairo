@@ -427,11 +427,20 @@ mod tests {
         player.total_xp = 10;
         world.write_model(@player);
         card_knight.level_up(1, 1,);
+
         let mut player: Player = world.read_model((1, caller));
         assert(player.max_hp == 22, 'Error max_hp1');
         assert(player.hp == 5, 'Error hp');
         assert(player.level == 2, 'Error level');
+
+        let player_card: Card = world.read_model((1, player.x, player.y));
+        assert(player_card.card_id == CardIdEnum::Player, 'Player card ');
+        assert(player_card.hp == 5, 'Player card hp ');
+        assert(player_card.max_hp == 22, 'Player card max_hp ');
+        assert(player_card.x == player.x, 'Player card x ');
+        assert(player_card.y == player.y, 'Player card y ');
     }
+
 
     #[test]
     #[available_gas(3000000000000000)]
@@ -467,6 +476,13 @@ mod tests {
         assert(player.max_hp == 20, 'Error max_hp1');
         assert(player.hp == 9, 'Error hp');
         assert(player.level == 2, 'Error level');
+
+        let player_card: Card = world.read_model((1, player.x, player.y));
+        assert(player_card.card_id == CardIdEnum::Player, 'Player card ');
+        assert(player_card.hp == 9, 'Player card hp ');
+        assert(player_card.max_hp == 20, 'Player card max_hp ');
+        assert(player_card.x == player.x, 'Player card x ');
+        assert(player_card.y == player.y, 'Player card y ');
     }
 
 
