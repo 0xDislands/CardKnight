@@ -61,17 +61,6 @@ mod actions {
     use super::IActions;
     const WEEK: u64 = 604800;
 
-    // TODO test fails when activated
-    // The only requirement is that the function is named `dojo_init`.
-    fn dojo_init(ref self: ContractState, core: ContractAddress, rewards: ContractAddress) {
-        let mut world = self.world(@"card_knight");
-        let mut contract: Contracts = world.read_model(2);
-        contract.address = rewards;
-        world.write_model(@contract);
-        let mut contract: Contracts = world.read_model(1);
-        contract.address = core;
-        world.write_model(@contract);
-    }
 
     #[abi(embed_v0)]
     impl PlayerActionsImpl of IActions<ContractState> {
@@ -130,52 +119,52 @@ mod actions {
                             turn: 0,
                             heroId: hero
                         };
-                        player.set_init_hero();
+
                         world.write_model(@player);
 
                         y += 1;
                         continue;
-                    }
-
-                    let (card_id, value) = monster_type_at_position(x, y);
-
-                    if (card_id == 1 && MONSTER_COUNT > 0) {
-                        let monster_health: u32 = 2;
-                        world
-                            .write_model(
-                                @Card {
-                                    game_id,
-                                    x: x,
-                                    y: y,
-                                    card_id: CardIdEnum::Monster1,
-                                    hp: monster_health,
-                                    max_hp: monster_health,
-                                    shield: 0,
-                                    max_shield: 0,
-                                    xp: MONSTER1_XP,
-                                    tag: TagType::None,
-                                    flipped: false,
-                                }
-                            );
-
-                        MONSTER_COUNT -= 1;
                     } else {
-                        world
-                            .write_model(
-                                @Card {
-                                    game_id,
-                                    x,
-                                    y,
-                                    card_id: CardIdEnum::ItemHeal,
-                                    hp: value,
-                                    max_hp: value,
-                                    shield: 0,
-                                    max_shield: 0,
-                                    xp: HEAL_XP,
-                                    tag: TagType::None,
-                                    flipped: false,
-                                }
-                            );
+                        let (card_id, value) = monster_type_at_position(x, y);
+
+                        if (card_id == 1 && MONSTER_COUNT > 0) {
+                            let monster_health: u32 = 2;
+                            world
+                                .write_model(
+                                    @Card {
+                                        game_id,
+                                        x: x,
+                                        y: y,
+                                        card_id: CardIdEnum::Monster1,
+                                        hp: monster_health,
+                                        max_hp: monster_health,
+                                        shield: 0,
+                                        max_shield: 0,
+                                        xp: MONSTER1_XP,
+                                        tag: TagType::None,
+                                        flipped: false,
+                                    }
+                                );
+
+                            MONSTER_COUNT -= 1;
+                        } else {
+                            world
+                                .write_model(
+                                    @Card {
+                                        game_id,
+                                        x,
+                                        y,
+                                        card_id: CardIdEnum::ItemHeal,
+                                        hp: 3,
+                                        max_hp: 3,
+                                        shield: 0,
+                                        max_shield: 0,
+                                        xp: HEAL_XP,
+                                        tag: TagType::None,
+                                        flipped: false,
+                                    }
+                                );
+                        }
                     }
                     y += 1;
                 };

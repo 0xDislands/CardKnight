@@ -366,7 +366,7 @@ mod tests {
         assert(player.hp == 10, 'Error hp');
 
         let mut card: Card = world.read_model((1, 1, 2));
-        println!("card hp {}", card.hp);
+
         assert(card.hp == 7, 'Error hp2');
     }
 

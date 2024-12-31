@@ -45,7 +45,7 @@ mod tests {
         world.sync_perms_and_inits(contract_defs());
 
         let (actions_system_addr, _) = world.dns(@"actions").unwrap();
-        let card_knight = IActionsDispatcher { contract_address: actions_system_addr };
+        let _card_knight = IActionsDispatcher { contract_address: actions_system_addr };
 
         world_setup(world, false);
 
@@ -112,7 +112,7 @@ mod tests {
         world.sync_perms_and_inits(contract_defs());
 
         let (actions_system_addr, _) = world.dns(@"actions").unwrap();
-        let card_knight = IActionsDispatcher { contract_address: actions_system_addr };
+        let _card_knight = IActionsDispatcher { contract_address: actions_system_addr };
 
         world_setup(world, false);
 
@@ -312,7 +312,7 @@ mod tests {
         world.sync_perms_and_inits(contract_defs());
 
         let (actions_system_addr, _) = world.dns(@"actions").unwrap();
-        let card_knight = IActionsDispatcher { contract_address: actions_system_addr };
+        let _card_knight = IActionsDispatcher { contract_address: actions_system_addr };
 
         world_setup(world, false);
 
