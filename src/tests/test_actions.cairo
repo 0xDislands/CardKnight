@@ -358,7 +358,22 @@ mod tests {
         player.turn = 10;
         world.write_model(@player);
 
-        card_knight.use_swap_skill(1, Direction::Up);
+        let new_card = Card {
+            game_id: 1,
+            x: 1,
+            y: 2,
+            card_id: CardIdEnum::Boss1,
+            hp: 111,
+            max_hp: 111,
+            shield: 0,
+            max_shield: 0,
+            xp: 0,
+            tag: TagType::None,
+            flipped: false,
+        };
+        world.write_model(@new_card);
+
+        card_knight.use_swap_skill(1, 1, 2);
 
         let mut player_skill: PlayerSkill = world.read_model((1, caller, Skill::Teleport));
 
@@ -367,11 +382,22 @@ mod tests {
         let mut player: Player = world.read_model((1, caller));
         assert(player.x == 1 && player.y == 2, 'Error position');
         assert(player.turn == 11, 'Error turn');
+
+        let player_card: Card = world.read_model((1, 1, 2));
+        assert(player_card.card_id == CardIdEnum::Player, 'Player card ');
+        assert(player_card.x == 1, 'Player card x ');
+        assert(player_card.y == 2, 'Player card y ');
+
+        let swap_card: Card = world.read_model((1, 1, 1));
+        assert(swap_card.card_id == CardIdEnum::Boss1, 'Player card ');
+        assert(swap_card.x == 1, 'Player card x ');
+        assert(swap_card.y == 1, 'Player card y ');
+        assert(swap_card.hp == 111, 'Player card hp ');
     }
 
 
     #[test]
-    #[should_panic(expected: ('Invalid swap direction', 'ENTRYPOINT_FAILED'))]
+    #[should_panic(expected: ('Invalid swap inputs', 'ENTRYPOINT_FAILED'))]
     #[available_gas(3000000000000000)]
     fn test_swap_skill_panic() {
         // caller
@@ -399,7 +425,7 @@ mod tests {
         player.turn = 10;
         player.y = 2;
         world.write_model(@player);
-        card_knight.use_swap_skill(1, Direction::Up);
+        card_knight.use_swap_skill(1, 3, 0);
     }
 
 

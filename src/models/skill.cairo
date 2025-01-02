@@ -265,28 +265,17 @@ impl IPlayerSkillImpl of IPlayerSkill {
 
 
     fn use_swap_skill(
-        self: @PlayerSkill,
-        mut player: Player,
-        mut world_storage: WorldStorage,
-        direction: Direction
+        self: @PlayerSkill, mut player: Player, mut world_storage: WorldStorage, x: u32, y: u32
     ) {
-        assert(*self.last_use + SKILL_CD <= player.turn, 'Skill cooldown');
-        let mut player_card: Card = world_storage.read_model((player.game_id, player.x, player.y));
-        let (next_x, next_y) = match direction {
-            Direction::Up => { (player.x, player.y + 1) },
-            Direction::Down => { (player.x, player.y - 1) },
-            Direction::Left => { (player.x - 1, player.y) },
-            Direction::Right => { (player.x + 1, player.y) }
-        };
-        let mut move_card: Card = world_storage.read_model((player.game_id, next_x, next_y));
-        move_card.x = player_card.x;
-        move_card.y = player_card.y;
-        player_card.x = next_x;
-        player_card.y = next_y;
-        player.x = next_x;
-        player.y = next_y;
+        assert(*self.last_use == 0 || *self.last_use + SKILL_CD <= player.turn, 'Skill cooldown');
+
+        let mut move_card: Card = world_storage.read_model((player.game_id, x, y));
+        move_card.x = player.x;
+        move_card.y = player.y;
         world_storage.write_model(@move_card);
-        world_storage.write_model(@player_card);
+
+        player.x = x;
+        player.y = y;
         world_storage.write_model(@player);
     }
 }

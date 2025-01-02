@@ -8,7 +8,7 @@ trait IActions<T> {
     fn start_game(ref self: T, game_id: u32, hero: Hero);
     fn move(ref self: T, game_id: u32, direction: Direction);
     fn use_skill(ref self: T, game_id: u32, skill: Skill, direction: Direction);
-    fn use_swap_skill(ref self: T, game_id: u32, direction: Direction);
+    fn use_swap_skill(ref self: T, game_id: u32, x: u32, y: u32);
     fn use_curse_skill(ref self: T, game_id: u32, x: u32, y: u32);
     fn level_up(ref self: T, game_id: u32, upgrade: u32);
     fn set_contract(ref self: T, index: u128, new_address: ContractAddress);
@@ -392,7 +392,7 @@ mod actions {
         }
 
 
-        fn use_swap_skill(ref self: ContractState, game_id: u32, direction: Direction) {
+        fn use_swap_skill(ref self: ContractState, game_id: u32, x: u32, y: u32) {
             let player_address = get_caller_address();
             let mut world = self.world(@"card_knight");
 
@@ -403,12 +403,13 @@ mod actions {
             let mut player_skill: PlayerSkill = world.read_model((game_id, player_address, skill));
             assert(!is_silent(world, player), 'Silence active');
 
-            assert(
-                ICardImpl::is_move_inside(direction, player.x, player.y), 'Invalid swap direction'
-            );
+            assert(x < 3 && y < 3, 'Invalid swap inputs');
+            if (player.x == x) {
+                assert(player.y != y, 'Invalid swap inputs');
+            };
 
             assert(player_skill.is_active(player.level), 'User level not enough');
-            player_skill.use_swap_skill(player, world, direction);
+            player_skill.use_swap_skill(player, world, x, y);
 
             player = world.read_model((game_id, player_address));
 

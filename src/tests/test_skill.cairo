@@ -557,17 +557,14 @@ mod tests {
         let player_skill: PlayerSkill = world.read_model((1, caller, Skill::Teleport));
 
         // Use swap skill
-        player_skill.use_swap_skill(player, world, Direction::Up);
+        player_skill.use_swap_skill(player, world, 1, 2);
 
         // Check if player position has changed
         let updated_player: Player = world.read_model((1, caller));
         assert(updated_player.x == 1 && updated_player.y == 2, 'Error position ');
 
         // Check if cards have swapped positions
-        let swapped_player_card: Card = world.read_model((1, 1, 2));
         let swapped_target_card: Card = world.read_model((1, 1, 1));
-
-        assert(swapped_player_card.card_id == CardIdEnum::Player, 'Error new position');
         assert(swapped_target_card.card_id == CardIdEnum::Monster1, 'Error old position');
     }
 
