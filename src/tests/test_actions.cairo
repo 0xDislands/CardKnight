@@ -230,6 +230,100 @@ mod tests {
         assert(player_skill.last_use == player.turn, 'Error last_use');
     }
 
+
+    #[test]
+    #[should_panic(expected: ('Silence active', 'ENTRYPOINT_FAILED'))]
+    #[available_gas(3000000000000000)]
+    fn test_use_skill_silent_panic() {
+        // caller
+        let caller = starknet::contract_address_const::<0x0>();
+
+        let ndef = namespace_def();
+        let mut world = spawn_test_world([ndef].span());
+        world.sync_perms_and_inits(contract_defs());
+
+        let (actions_system_addr, _) = world.dns(@"actions").unwrap();
+        let card_knight = IActionsDispatcher { contract_address: actions_system_addr };
+
+        world_setup(world, false);
+
+        let mut player = player_setup(caller);
+        world.write_model(@player);
+
+        let hero = Hero::Knight;
+        card_knight.start_game(1, hero);
+
+        let mut player: Player = world.read_model((1, caller));
+        player.hp = 5;
+        player.max_hp = 10;
+        player.level = 10;
+        player.turn = 10;
+        world.write_model(@player);
+
+        let card = Card {
+            game_id: 1,
+            x: 0,
+            y: 0,
+            card_id: CardIdEnum::Monster1,
+            hp: 10,
+            max_hp: 10,
+            shield: 0,
+            max_shield: 0,
+            xp: 0,
+            tag: TagType::Silent,
+            flipped: false,
+        };
+        world.write_model(@card);
+
+        card_knight.use_skill(1, Skill::Regeneration, Direction::Up);
+    }
+
+    #[test]
+    #[available_gas(3000000000000000)]
+    fn test_use_skill_not_silent() {
+        // caller
+        let caller = starknet::contract_address_const::<0x0>();
+
+        let ndef = namespace_def();
+        let mut world = spawn_test_world([ndef].span());
+        world.sync_perms_and_inits(contract_defs());
+
+        let (actions_system_addr, _) = world.dns(@"actions").unwrap();
+        let card_knight = IActionsDispatcher { contract_address: actions_system_addr };
+
+        world_setup(world, false);
+
+        let mut player = player_setup(caller);
+        world.write_model(@player);
+
+        let hero = Hero::Knight;
+        card_knight.start_game(1, hero);
+
+        let mut player: Player = world.read_model((1, caller));
+        player.hp = 5;
+        player.max_hp = 10;
+        player.level = 10;
+        player.turn = 10;
+        world.write_model(@player);
+
+        let card = Card {
+            game_id: 1,
+            x: 0,
+            y: 0,
+            card_id: CardIdEnum::Monster1,
+            hp: 10,
+            max_hp: 10,
+            shield: 0,
+            max_shield: 0,
+            xp: 0,
+            tag: TagType::None,
+            flipped: false,
+        };
+        world.write_model(@card);
+
+        card_knight.use_skill(1, Skill::Regeneration, Direction::Up);
+    }
+
     #[test]
     #[available_gas(3000000000000000)]
     fn test_use_skill2() {

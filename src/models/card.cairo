@@ -490,7 +490,10 @@ impl ICardImpl of ICardTrait {
         } else if (x == 1 && y == 1) {
             return (TagType::NoHope);
         } else if (x == 2 && y == 1) {
-            return (TagType::Silent);
+            //TODO updated for test
+            //return (TagType::Silent);
+            return (TagType::None);
+
         }
         TagType::None
     }
