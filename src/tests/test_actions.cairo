@@ -1011,6 +1011,76 @@ mod tests {
         assert(player_card.x == 1, 'Player card x ');
         assert(player_card.y == 1, 'Player card y ');
     }
+    
+    #[test]
+    #[available_gas(3000000000000000)]
+    fn test_move3() {
+        // Setup
+        // caller
+        let caller = starknet::contract_address_const::<0x0>();
+
+        let ndef = namespace_def();
+        let mut world = spawn_test_world([ndef].span());
+        world.sync_perms_and_inits(contract_defs());
+
+        let (actions_system_addr, _) = world.dns(@"actions").unwrap();
+        let card_knight = IActionsDispatcher { contract_address: actions_system_addr };
+
+        let game_id = 1;
+        card_knight.start_game(game_id, Hero::Knight);
+
+        let new_card = Card {
+            game_id: 1,
+            x: 0,
+            y: 2,
+            card_id: CardIdEnum::Monster1,
+            hp: 5,
+            max_hp: 5,
+            shield: 0,
+            max_shield: 0,
+            xp: 2,
+            tag: TagType::None,
+            flipped: false,
+        };
+        world.write_model(@new_card);
+
+        let new_card = Card {
+            game_id: 1,
+            x: 0,
+            y: 2,
+            card_id: CardIdEnum::Player,
+            hp: 5,
+            max_hp: 5,
+            shield: 0,
+            max_shield: 0,
+            xp: 2,
+            tag: TagType::None,
+            flipped: false,
+        };
+        world.write_model(@new_card);
+
+        let mut player: Player = world.read_model((1, caller));
+        player.hp = 5;
+        player.x = 0;
+        player.y = 2;
+        world.write_model(@player);
+
+        // Move player
+        card_knight.move(game_id, Direction::Right);
+
+        // Check new player position
+        let moved_player: Player = world.read_model((game_id, caller));
+
+        println!("card hp {}", moved_player.hp);
+
+        assert(moved_player.x == 1, 'Player did not move left');
+        assert(moved_player.y == 2, 'Player y pos');
+        // Check if player card moved
+        let player_card: Card = world.read_model((game_id, 1, 2));
+        assert(player_card.card_id == CardIdEnum::Player, 'Player card ');
+        assert(player_card.x == 1, 'Player card x ');
+        assert(player_card.y == 2, 'Player card y ');
+    }
 
 
     #[test]

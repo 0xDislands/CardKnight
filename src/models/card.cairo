@@ -13,7 +13,7 @@ use card_knight::utils::random_index;
 
 use dojo::model::{ModelStorage, ModelValueStorage};
 use dojo::world::{IWorld, IWorldDispatcher, IWorldDispatcherTrait, WorldStorage};
-
+use integer::u256_from_felt252;
 
 #[derive(Copy, Drop, Serde, PartialEq)]
 #[dojo::model]
@@ -185,6 +185,20 @@ impl ICardImpl of ICardTrait {
         }
     }
 
+    fn is_inside_felt(x: felt252, y: felt252) -> bool {
+        let x_u256 = u256_from_felt252(x);
+        let y_u256 = u256_from_felt252(y);
+
+        let x_cond: bool = x_u256 < 3;
+        let y_cond: bool = y_u256 < 3;
+        if x_cond && y_cond {
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+
     fn is_move_inside(move: Direction, x: u32, y: u32) -> bool {
         match move {
             Direction::Up => { MAP_RANGE >= y + 1 },
@@ -233,6 +247,47 @@ impl ICardImpl of ICardTrait {
     }
 
 
+    fn get_move_card2(
+        mut world_storage: WorldStorage, game_id: u32, x: u32, y: u32, player: Player
+    ) -> Card {
+        let cx: felt252 = x.into();
+        let cy: felt252 = y.into();
+
+        let px: felt252 = player.x.into();
+        let py: felt252 = player.y.into();
+
+        let direction_x = cx - px;
+        let direction_y = cy - py;
+
+        let mut straightGrid_x = px - direction_x;
+        let mut straightGrid_y = py - direction_y;
+
+        if Self::is_inside_felt(straightGrid_x, straightGrid_y) {
+            let x_: u32 = u256_from_felt252(straightGrid_x).try_into().unwrap();
+            let y_: u32 = u256_from_felt252(straightGrid_y).try_into().unwrap();
+            let card_: Card = world_storage.read_model((game_id, x_, y_));
+            return (card_);
+        };
+
+        let mut neighbour_cards: @Array<Card> = {
+            let mut arr: Array<Card> = Self::get_all_neighbours(world_storage, game_id, x, y);
+            @arr
+        };
+
+        let arr_len = neighbour_cards.len();
+
+        let arr_len = neighbour_cards.len();
+
+        if arr_len == 1 {
+            return *(neighbour_cards.at(0));
+        };
+
+        let card_: Card = world_storage.read_model((game_id, 1, 2)); // Dummy default
+
+        return (card_);
+    }
+
+
     fn get_move_card(
         mut world_storage: WorldStorage, game_id: u32, x: u32, y: u32, player: Player
     ) -> Card {
@@ -273,15 +328,20 @@ impl ICardImpl of ICardTrait {
         };
 
         let mut neighbour_cards: @Array<Card> = {
-            let mut arr: Array<Card> = Self::get_all_neighbours(world_storage, game_id, x, y);
-
+            let mut arr: Array<Card> = Self::get_all_neighbours(
+                world_storage, game_id, player.x, player.y
+            );
             @arr
         };
 
         let arr_len = neighbour_cards.len();
 
-        if arr_len == 1 {
-            return *(neighbour_cards.at(0));
+        if arr_len == 2 {
+            if (*(neighbour_cards.at(0)).x  == x && *(neighbour_cards.at(0)).y  == y) {
+                return *(neighbour_cards.at(1));
+            } else if (*(neighbour_cards.at(1)).x == x && *(neighbour_cards.at(1)).y  == y) {
+                return *(neighbour_cards.at(0));
+            }
         };
 
         if (card.x == player.x) {
@@ -493,7 +553,6 @@ impl ICardImpl of ICardTrait {
             //TODO updated for test
             //return (TagType::Silent);
             return (TagType::None);
-
         }
         TagType::None
     }
@@ -537,9 +596,9 @@ impl ICardImpl of ICardTrait {
         if isInsideR {
             arr.append(neighbour_right);
         }
-
         arr
     }
+
 
     fn apply_growth_tag(ref self: Card) {
         let hp = self.max_hp / 10;

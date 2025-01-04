@@ -194,7 +194,7 @@ mod actions {
             assert(self.levelUpWaiting(player_address, game_id) == false, 'Level up waiting');
 
             assert(player.hp != 0, 'Player is dead');
-            let mut old_player_card: Card = world.read_model((game_id, player.x, player.y));
+            let mut _old_player_card: Card = world.read_model((game_id, player.x, player.y));
 
             // delete!(world, (old_player_card));
             let (next_x, next_y) = match direction {
@@ -238,7 +238,7 @@ mod actions {
             );
             let mut moveCard_x = moveCard.x;
             let mut moveCard_y = moveCard.y;
-            if (ICardImpl::is_corner(player)) {
+            if (ICardImpl::is_corner(player)) {       
                 let mut x_destination = player.x;
                 let mut y_destination = player.y;
 
