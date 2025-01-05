@@ -238,7 +238,7 @@ mod actions {
             );
             let mut moveCard_x = moveCard.x;
             let mut moveCard_y = moveCard.y;
-            if (ICardImpl::is_corner(player)) {       
+            if (ICardImpl::is_corner(player)) {
                 let mut x_destination = player.x;
                 let mut y_destination = player.y;
 

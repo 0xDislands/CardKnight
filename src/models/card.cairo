@@ -337,9 +337,9 @@ impl ICardImpl of ICardTrait {
         let arr_len = neighbour_cards.len();
 
         if arr_len == 2 {
-            if (*(neighbour_cards.at(0)).x  == x && *(neighbour_cards.at(0)).y  == y) {
+            if (*(neighbour_cards.at(0)).x == x && *(neighbour_cards.at(0)).y == y) {
                 return *(neighbour_cards.at(1));
-            } else if (*(neighbour_cards.at(1)).x == x && *(neighbour_cards.at(1)).y  == y) {
+            } else if (*(neighbour_cards.at(1)).x == x && *(neighbour_cards.at(1)).y == y) {
                 return *(neighbour_cards.at(0));
             }
         };

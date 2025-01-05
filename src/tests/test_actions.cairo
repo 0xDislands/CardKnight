@@ -1011,7 +1011,7 @@ mod tests {
         assert(player_card.x == 1, 'Player card x ');
         assert(player_card.y == 1, 'Player card y ');
     }
-    
+
     #[test]
     #[available_gas(3000000000000000)]
     fn test_move3() {

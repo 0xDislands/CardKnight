@@ -86,30 +86,23 @@ impl IPlayerSkillImpl of IPlayerSkill {
             assert(
                 *self.last_use == 0 || *self.last_use + SKILL_CD <= player.turn, 'Skill cooldown'
             );
-            let mut neighbour_cards: Array<Card> = ICardTrait::get_all_neighbours(
-                world_storage, player.game_id, player.x, player.y
+            assert(
+                ICardImpl::is_move_inside(direction, player.x, player.y), 'Invalid skil direction'
             );
-            let arr_len = neighbour_cards.len();
 
-            let mut i = 0;
-            while i < arr_len {
-                let mut card = *neighbour_cards.at(i);
+            let (next_x, next_y) = match direction {
+                Direction::Up => { (player.x, player.y + 1) },
+                Direction::Down => { (player.x, player.y - 1) },
+                Direction::Left => { (player.x - 1, player.y) },
+                Direction::Right => { (player.x + 1, player.y) }
+            };
 
-                if (card.is_monster() && card.tag != TagType::NoMagic) {
-                    let damage = card.max_hp / 4 + 1;
-                    if (card.hp <= damage) {
-                        if (card.card_id == CardIdEnum::Boss1) {
-                            ICardImpl::flip_cards(world_storage, player.game_id, false);
-                        }
-                        ICardImpl::spawn_card(
-                            world_storage, player.game_id, card.x, card.y, player
-                        );
-                    } else {
-                        card.hp = card.hp - damage;
-                        world_storage.write_model(@card);
-                    }
-                }
-                i += 1;
+            let mut card :Card = world_storage.read_model((player.game_id, next_x, next_y));
+            if (card.is_monster() && card.tag != TagType::NoMagic) {
+
+                card.max_hp=0;
+                world_storage.write_model(@card);
+
             }
         } else if (skill == Skill::Meteor) {
             assert(
