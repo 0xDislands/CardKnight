@@ -429,7 +429,7 @@ impl ICardImpl of ICardTrait {
 
         world_storage.write_model(@new_player);
 
-        let max_hp = {
+        let mut max_hp = {
             match card_id {
                 CardIdEnum::Player => 0,
                 CardIdEnum::Monster1 => { MONSTER1_BASE_HP * MONSTER1_MULTIPLE },
@@ -464,6 +464,15 @@ impl ICardImpl of ICardTrait {
         };
         let tag_type = Self::get_tag(*card_id, x, y);
 
+        let mut shield = 0;
+        if (*card_id == CardIdEnum::ItemShield) {
+            shield = 1 + sequence % 5;
+        }
+
+        if (*card_id == CardIdEnum::ItemHeal) {
+            max_hp = 1 + sequence % 5;
+        }
+
         let card = Card {
             game_id: game_id,
             x: x,
@@ -471,12 +480,13 @@ impl ICardImpl of ICardTrait {
             card_id: *card_id,
             hp: max_hp,
             max_hp: max_hp,
-            shield: 0,
+            shield: shield,
             max_shield: 0,
             xp: xp,
             tag: tag_type,
             flipped: false,
         };
+
         world_storage.write_model(@card);
         let is_boss = if (card.card_id == CardIdEnum::Boss1) {
             true

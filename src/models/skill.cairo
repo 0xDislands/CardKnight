@@ -97,12 +97,12 @@ impl IPlayerSkillImpl of IPlayerSkill {
                 Direction::Right => { (player.x + 1, player.y) }
             };
 
-            let mut card :Card = world_storage.read_model((player.game_id, next_x, next_y));
+            let mut card: Card = world_storage.read_model((player.game_id, next_x, next_y));
             if (card.is_monster() && card.tag != TagType::NoMagic) {
-
-                card.max_hp=0;
-                world_storage.write_model(@card);
-
+                if (card.card_id == CardIdEnum::Boss1) {
+                    ICardImpl::flip_cards(world_storage, player.game_id, false);
+                }
+                ICardImpl::spawn_card(world_storage, player.game_id, card.x, card.y, player);
             }
         } else if (skill == Skill::Meteor) {
             assert(
