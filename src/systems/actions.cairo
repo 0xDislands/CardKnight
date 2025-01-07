@@ -23,6 +23,8 @@ trait IActions<T> {
     fn hero_skills(self: @T, hero: Hero,) -> (Skill, Skill, Skill);
     fn levelUpWaiting(self: @T, user: ContractAddress, game_id: u32,) -> bool;
     fn levelUpOptions(self: @T, user: ContractAddress, game_id: u32,) -> (ByteArray, ByteArray);
+    fn hero_skills_cd(self: @T, game_id: u32, player_address: ContractAddress) -> (u32, u32, u32);
+    fn skill_cd(self: @T, game_id: u32, player_address: ContractAddress, skill: Skill) -> u32;
 }
 
 #[dojo::contract]
@@ -48,7 +50,7 @@ mod actions {
     use card_knight::config::IDislandReward::{
         IDislandRewardDispatcher, IDislandRewardDispatcherTrait
     };
-    use card_knight::config::level::{SKILL_LEVEL, BIG_SKILL_CD,};
+    use card_knight::config::level::{SKILL_LEVEL, BIG_SKILL_CD, SKILL_CD};
     use card_knight::config::level;
     use poseidon::PoseidonTrait;
     use hash::HashStateTrait;
@@ -557,6 +559,45 @@ mod actions {
             weekly_winner.address
         }
 
+        fn hero_skills_cd(
+            self: @ContractState, game_id: u32, player_address: ContractAddress
+        ) -> (u32, u32, u32) {
+            let mut world = self.world(@"card_knight");
+            let mut player_: Player = world.read_model((game_id, player_address));
+
+            let (skill1, skill2, skill3) = self.hero_skills(player_.heroId);
+            let cd1 = self.skill_cd(game_id, player_address, skill1);
+            let cd2 = self.skill_cd(game_id, player_address, skill2);
+            let cd3 = self.skill_cd(game_id, player_address, skill3);
+
+            (cd1, cd2, cd3)
+        }
+
+        fn skill_cd(
+            self: @ContractState, game_id: u32, player_address: ContractAddress, skill: Skill
+        ) -> u32 {
+            let mut world = self.world(@"card_knight");
+            let mut player: Player = world.read_model((game_id, player_address));
+
+            let mut player_skill: PlayerSkill = world.read_model((game_id, player_address, skill));
+
+            if (player_skill.last_use == 0) {
+                return 0;
+            }
+            if (skill == Skill::Regeneration || skill == Skill::Curse) {
+                if (player.turn >= player_skill.last_use + BIG_SKILL_CD) {
+                    return (0);
+                } else {
+                    return (player_skill.last_use + BIG_SKILL_CD - player.turn);
+                }
+            }
+            if (player.turn >= player_skill.last_use + SKILL_CD) {
+                return (0);
+            }
+            player_skill.last_use + SKILL_CD - player.turn
+        }
+
+
         fn hero_skills(self: @ContractState, hero: Hero,) -> (Skill, Skill, Skill) {
             if (hero == Hero::Knight) {
                 (Skill::PowerupSlash, Skill::Teleport, Skill::Regeneration)
@@ -566,6 +607,7 @@ mod actions {
                 (Skill::LifeSteal, Skill::Teleport, Skill::Curse)
             }
         }
+
 
         fn levelUpWaiting(self: @ContractState, user: ContractAddress, game_id: u32) -> bool {
             let mut world = self.world(@"card_knight");

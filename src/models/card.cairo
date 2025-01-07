@@ -120,7 +120,7 @@ impl ICardImpl of ICardTrait {
                         hp: 0,
                         max_hp: 0,
                         shield: card_value,
-                        max_shield: 0,
+                        max_shield: player.hp / 2,
                         xp: SHIELD_XP,
                         tag: TagType::None,
                         flipped: false,
@@ -273,8 +273,6 @@ impl ICardImpl of ICardTrait {
             let mut arr: Array<Card> = Self::get_all_neighbours(world_storage, game_id, x, y);
             @arr
         };
-
-        let arr_len = neighbour_cards.len();
 
         let arr_len = neighbour_cards.len();
 
@@ -465,8 +463,10 @@ impl ICardImpl of ICardTrait {
         let tag_type = Self::get_tag(*card_id, x, y);
 
         let mut shield = 0;
+        let mut max_shield = 0;
         if (*card_id == CardIdEnum::ItemShield) {
             shield = 1 + sequence % 5;
+            max_shield = 6;
         }
 
         if (*card_id == CardIdEnum::ItemHeal) {
@@ -481,7 +481,7 @@ impl ICardImpl of ICardTrait {
             hp: max_hp,
             max_hp: max_hp,
             shield: shield,
-            max_shield: 0,
+            max_shield: max_shield,
             xp: xp,
             tag: tag_type,
             flipped: false,
