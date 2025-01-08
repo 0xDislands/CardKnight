@@ -64,12 +64,16 @@ mod tests {
         assert(player.hp == 20, 'Wrong initial HP');
         assert(player.max_hp == 20, 'Wrong max HP');
         assert(player.level == 1, 'Wrong initial level');
+        assert(player.shield == 0, 'Wrong shield');
+        assert(player.max_shield == 10, 'Wrong initial max_shield');
 
         let mut player_card: Card = world.read_model((1, 1, 1));
 
         assert(player_card.x == 1, 'Error x');
         assert(player_card.y == 1, 'Error y');
         assert(player_card.card_id == CardIdEnum::Player, 'Error card_id');
+        assert(player_card.shield == 0, 'Wrong shield');
+        assert(player_card.max_shield == 10, 'Wrong initial max_shield');
 
         // Check if cards were created
         let mut total_cards = 0;

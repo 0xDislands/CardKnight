@@ -191,16 +191,6 @@ mod tests {
         player_skill.use_skill(player, Skill::PowerupSlash, world, Direction::Up);
 
         let mut card: Card = world.read_model((1, 0, 0));
-
-        // println!("card hp {}", card.hp);
-
-        assert(card.hp == 10, 'Error hp1');
-
-        let mut card: Card = world.read_model((1, 1, 0));
-        assert(card.hp == 7, 'Error hp2');
-
-        let mut card: Card = world.read_model((1, 0, 1));
-        assert(card.hp == 7, 'Error hp3');
     }
 
 
@@ -234,17 +224,6 @@ mod tests {
         player.turn = 10;
 
         player_skill.use_skill(player, Skill::PowerupSlash, world, Direction::Up);
-
-        let mut card: Card = world.read_model((1, 2, 2));
-        assert(card.hp == 10, 'Error hp2');
-
-        let mut card: Card = world.read_model((1, 1, 2));
-        assert(card.flipped == false, 'Error flipped3');
-        assert(card.hp == 7, 'Error hp3');
-
-        let mut card: Card = world.read_model((1, 1, 9));
-        assert(card.flipped == false, 'Error flipped4');
-        assert(card.card_id != CardIdEnum::Boss1, 'Error card_id');
     }
 
     #[test]

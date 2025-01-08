@@ -18,7 +18,7 @@ const SHIELD_HP: u32 = 5;
 const POISON_TURN: u32 = 3;
 
 //XPs
-const HEAL_XP: u32 = 1;
+const HEAL_XP: u32 = 0;
 const POISON_XP: u32 = 0;
 const MONSTER1_XP: u32 = 1;
 const MONSTER2_XP: u32 = 2;
