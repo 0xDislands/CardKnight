@@ -155,6 +155,7 @@ impl IPlayerSkillImpl of IPlayerSkill {
 
             assert(card.tag != TagType::NoMagic, 'immune to skill');
             assert(card.card_id != CardIdEnum::Boss1, 'Hex cant target boss');
+
             if (card.is_monster()) {
                 let new_card = Card {
                     game_id: card.game_id,

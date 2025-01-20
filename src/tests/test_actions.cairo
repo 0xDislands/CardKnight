@@ -599,8 +599,12 @@ mod tests {
         world.write_model(@player);
 
         card_knight.level_up(1, 1,);
+        println!("BEFORE.max_hp hp {}", player.max_hp);
 
         let mut player: Player = world.read_model((1, caller));
+
+        println!("player.max_hp hp {}", player.max_hp);
+
         assert(player.max_hp == 12, 'Error max_hp1');
         assert(player.hp == 10, 'Error hp');
         assert(player.level == 2, 'Error level');
@@ -653,14 +657,14 @@ mod tests {
         card_knight.level_up(1, 1,);
 
         let mut player: Player = world.read_model((1, caller));
-        assert(player.max_hp == 22, 'Error max_hp1');
+        assert(player.max_hp == 24, 'Error max_hp1');
         assert(player.hp == 5, 'Error hp');
         assert(player.level == 2, 'Error level');
 
         let player_card: Card = world.read_model((1, player.x, player.y));
         assert(player_card.card_id == CardIdEnum::Player, 'Player card ');
         assert(player_card.hp == 5, 'Player card hp ');
-        assert(player_card.max_hp == 22, 'Player card max_hp ');
+        assert(player_card.max_hp == 24, 'Player card max_hp ');
         assert(player_card.x == player.x, 'Player card x ');
         assert(player_card.y == player.y, 'Player card y ');
     }
@@ -698,12 +702,12 @@ mod tests {
         card_knight.level_up(1, 2,);
         let mut player: Player = world.read_model((1, caller));
         assert(player.max_hp == 20, 'Error max_hp1');
-        assert(player.hp == 9, 'Error hp');
+        assert(player.hp == 13, 'Error hp');
         assert(player.level == 2, 'Error level');
 
         let player_card: Card = world.read_model((1, player.x, player.y));
         assert(player_card.card_id == CardIdEnum::Player, 'Player card ');
-        assert(player_card.hp == 9, 'Player card hp ');
+        assert(player_card.hp == 13, 'Player card hp ');
         assert(player_card.max_hp == 20, 'Player card max_hp ');
         assert(player_card.x == player.x, 'Player card x ');
         assert(player_card.y == player.y, 'Player card y ');
@@ -1199,6 +1203,130 @@ mod tests {
                     assert(card.flipped == false, 'Error still flipped');
                 }
 
+                y = y + 1;
+            };
+            y = 0;
+            x = x + 1;
+        };
+    }
+
+
+    #[test]
+    #[available_gas(3000000000000000)]
+    fn test_bossf_lip() {
+        // Setup
+        // caller
+        let caller = starknet::contract_address_const::<0x0>();
+
+        let ndef = namespace_def();
+        let mut world = spawn_test_world([ndef].span());
+        world.sync_perms_and_inits(contract_defs());
+
+        let (actions_system_addr, _) = world.dns(@"actions").unwrap();
+        let card_knight = IActionsDispatcher { contract_address: actions_system_addr };
+
+        world_setup(world, false);
+
+        let mut player = player_setup(caller);
+        world.write_model(@player);
+        let game_id = 1;
+        card_knight.start_game(game_id, Hero::Knight);
+
+        world_setup(world, true);
+
+        // Initial player position
+        let mut initial_player: Player = world.read_model((game_id, caller));
+        let initial_x = 1;
+        let initial_y = 1;
+        initial_player.hp = 30;
+        initial_player.max_hp = 30;
+        initial_player.level = 1;
+        initial_player.sequence = 1;
+        world.write_model(@initial_player);
+
+        let mut new_card: Card = world.read_model((game_id, 1, 2));
+        new_card.card_id = CardIdEnum::Boss1;
+        new_card.x = 2;
+        new_card.y = 2;
+        new_card.flipped = false;
+
+        world.write_model(@new_card);
+
+        card_knight.move(game_id, Direction::Down);
+
+        let moved_player: Player = world.read_model((game_id, caller));
+        assert(moved_player.x == 1, 'Player did not up');
+        assert(moved_player.y == 0, 'Player y pos');
+
+        // Check if all cards are flipped back after boss is defeated
+        let mut x: u32 = 0;
+        let mut y: u32 = 0;
+        while x <= 2 {
+            while y <= 2 {
+                let mut card: Card = world.read_model((game_id, x, y));
+                if (card.card_id != CardIdEnum::Boss1 && card.card_id != CardIdEnum::Player) {
+                    assert(card.flipped == true, 'Error flipped');
+                }
+                y = y + 1;
+            };
+            y = 0;
+            x = x + 1;
+        };
+
+        card_knight.move(game_id, Direction::Up);
+
+        let moved_player: Player = world.read_model((game_id, caller));
+        assert(moved_player.x == 1, 'Player did not up');
+        assert(moved_player.y == 1, 'Player y pos');
+
+        let mut x: u32 = 0;
+        let mut y: u32 = 0;
+        while x <= 2 {
+            while y <= 2 {
+                let mut card: Card = world.read_model((game_id, x, y));
+                if (card.card_id != CardIdEnum::Boss1 && card.card_id != CardIdEnum::Player) {
+                    assert(card.flipped == true, 'Error flipped');
+                }
+                y = y + 1;
+            };
+            y = 0;
+            x = x + 1;
+        };
+
+        card_knight.move(game_id, Direction::Up);
+
+        let moved_player: Player = world.read_model((game_id, caller));
+        assert(moved_player.x == 1, 'Player did not up');
+        assert(moved_player.y == 2, 'Player y pos');
+
+        let mut x: u32 = 0;
+        let mut y: u32 = 0;
+        while x <= 2 {
+            while y <= 2 {
+                let mut card: Card = world.read_model((game_id, x, y));
+                if (card.card_id != CardIdEnum::Boss1 && card.card_id != CardIdEnum::Player) {
+                    assert(card.flipped == true, 'Error flipped');
+                }
+                y = y + 1;
+            };
+            y = 0;
+            x = x + 1;
+        };
+
+        card_knight.move(game_id, Direction::Right);
+
+        let moved_player: Player = world.read_model((game_id, caller));
+        assert(moved_player.x == 2, 'Player did not up');
+        assert(moved_player.y == 2, 'Player y pos');
+
+        let mut x: u32 = 0;
+        let mut y: u32 = 0;
+        while x <= 2 {
+            while y <= 2 {
+                let mut card: Card = world.read_model((game_id, x, y));
+                if (card.card_id != CardIdEnum::Boss1 && card.card_id != CardIdEnum::Player) {
+                    assert(card.flipped == false, 'Error flipped');
+                }
                 y = y + 1;
             };
             y = 0;

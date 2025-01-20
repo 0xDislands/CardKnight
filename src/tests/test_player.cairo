@@ -126,7 +126,7 @@ mod tests {
 
         assert!(player.total_xp == level::LEVEL2_XP + 2, "Error total_xp");
         assert!(player.exp == 2, "Error exp");
-        assert!(player.max_hp == 10 + level::LEVEL2_UP1, "Error max_hp");
+        assert!(player.max_hp == 10 + 2, "Error max_hp");
 
         player.total_xp = level::LEVEL3_XP + 1;
         player.exp = level::LEVEL3_XP + 1;
@@ -146,7 +146,7 @@ mod tests {
 
         assert!(player.total_xp == level::LEVEL4_XP + 3, "Error total_xp");
         assert!(player.exp == 3, "Error exp");
-        assert!(player.max_hp == 20 + level::LEVEL4_UP1, "Error max_hp");
+        assert!(player.max_hp == 20 + 6, "Error max_hp");
     }
 
 

@@ -86,16 +86,19 @@ impl IPlayerImpl of IPlayer {
                 assert(self.total_xp >= level::LEVEL2_XP, 'Cant level up');
                 self.exp = self.total_xp - level::LEVEL2_XP;
                 if (upgrade == 1) {
-                    self.max_hp += level::LEVEL2_UP1;
+                    let new_max_hp = self.max_hp + self.max_hp * level::LEVEL2_UP1 / 10;
+                    self.max_hp = new_max_hp;
                 } else {
-                    self.heal(level::LEVEL2_UP2);
+                    let heal = self.max_hp * level::LEVEL2_UP2 / 10;
+                    self.heal(heal);
                 }
             },
             2 => {
                 assert(self.total_xp >= level::LEVEL3_XP, 'Cant level up');
                 self.exp = self.total_xp - level::LEVEL3_XP;
                 if (upgrade == 1) {
-                    self.max_shield += level::LEVEL3_UP1;
+                    let new_max = self.max_shield + self.max_shield * level::LEVEL3_UP1 / 10;
+                    self.max_shield = new_max;
                 } else {
                     self.heal(self.max_hp);
                 }
@@ -104,7 +107,8 @@ impl IPlayerImpl of IPlayer {
                 assert(self.total_xp >= level::LEVEL4_XP, 'Cant level up');
                 self.exp = self.total_xp - level::LEVEL4_XP;
                 if (upgrade == 1) {
-                    self.max_hp += level::LEVEL4_UP1;
+                    let new_max_hp = self.max_hp + self.max_hp * level::LEVEL4_UP1 / 10;
+                    self.max_hp = new_max_hp;
                 } else {
                     self.heal(level::LEVEL4_UP2);
                 }
@@ -113,7 +117,8 @@ impl IPlayerImpl of IPlayer {
                 assert(self.total_xp >= level::LEVEL5_XP, 'Cant level up');
                 self.exp = self.total_xp - level::LEVEL5_XP;
                 if (upgrade == 1) {
-                    self.max_shield += level::LEVEL5_UP1;
+                    let new_max = self.max_shield + self.max_shield * level::LEVEL5_UP1 / 10;
+                    self.max_shield = new_max;
                 } else {
                     self.heal(self.max_hp);
                 }
@@ -122,7 +127,8 @@ impl IPlayerImpl of IPlayer {
                 assert(self.total_xp >= level::LEVEL6_XP, 'Cant level up');
                 self.exp = self.total_xp - level::LEVEL6_XP;
                 if (upgrade == 1) {
-                    self.max_hp += level::LEVEL6_UP1;
+                    let new_max = self.max_shield + self.max_shield * level::LEVEL6_UP1 / 10;
+                    self.max_hp = new_max;
                 } else {
                     self.heal(self.max_hp);
                 }

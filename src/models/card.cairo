@@ -91,7 +91,7 @@ impl ICardImpl of ICardTrait {
                         max_shield: 0,
                         xp: HEAL_XP,
                         tag: TagType::None,
-                        flipped: false,
+                        flipped: card.flipped,
                     };
                     world_storage.write_model(@new_card);
                 } else if (index == 1) {
@@ -473,6 +473,8 @@ impl ICardImpl of ICardTrait {
             max_hp = 1 + sequence % 5;
         }
 
+        let is_boss = Self::is_boss_active(world_storage, game_id, false);
+
         let card = Card {
             game_id: game_id,
             x: x,
@@ -484,7 +486,7 @@ impl ICardImpl of ICardTrait {
             max_shield: max_shield,
             xp: xp,
             tag: tag_type,
-            flipped: false,
+            flipped: is_boss,
         };
 
         world_storage.write_model(@card);
