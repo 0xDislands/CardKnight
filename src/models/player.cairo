@@ -9,7 +9,7 @@ use dojo::world::{IWorld, IWorldDispatcher, IWorldDispatcherTrait, WorldStorage}
 enum Hero {
     Knight,
     Shaman,
-    Vampire
+    Vampire,
 }
 
 #[derive(Copy, Drop, Serde, PartialEq)]
@@ -33,7 +33,7 @@ struct Player {
     alive: bool,
     poisoned: u32,
     turn: u32,
-    heroId: Hero
+    heroId: Hero,
 }
 
 #[derive(Copy, Drop, Serde, PartialEq)]
@@ -73,7 +73,7 @@ struct WeeklyWinner {
     #[key]
     week: u64,
     address: ContractAddress,
-    score: u32
+    score: u32,
 }
 
 
@@ -203,19 +203,19 @@ impl IPlayerImpl of IPlayer {
                     skill == Skill::PowerupSlash
                         || skill == Skill::Teleport
                         || skill == Skill::Regeneration,
-                    'Invalid Knight skill'
+                    'Invalid Knight skill',
                 );
             },
             Hero::Shaman => {
                 assert(
                     skill == Skill::Hex || skill == Skill::Shuffle || skill == Skill::Meteor,
-                    'Invalid Shaman skill'
+                    'Invalid Shaman skill',
                 );
             },
             Hero::Vampire => {
                 assert(
                     skill == Skill::LifeSteal || skill == Skill::Teleport || skill == Skill::Curse,
-                    'Invalid Vampire skill'
+                    'Invalid Vampire skill',
                 );
             },
         }
@@ -227,7 +227,7 @@ enum LevelUpOptions {
     IncreaseMaxHp,
     AddHp,
     IncreaseMaxArmour,
-    AddArmour
+    AddArmour,
 }
 
 impl GameStatusFelt252 of Into<LevelUpOptions, felt252> {

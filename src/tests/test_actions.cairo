@@ -1093,6 +1093,110 @@ mod tests {
 
     #[test]
     #[available_gas(3000000000000000)]
+    fn test_move_deal() {
+        // Setup
+        // caller
+        let caller = starknet::contract_address_const::<0x0>();
+
+        let ndef = namespace_def();
+        let mut world = spawn_test_world([ndef].span());
+        world.sync_perms_and_inits(contract_defs());
+
+        let (actions_system_addr, _) = world.dns(@"actions").unwrap();
+        let card_knight = IActionsDispatcher { contract_address: actions_system_addr };
+
+        let game_id = 1;
+        card_knight.start_game(game_id, Hero::Knight);
+
+        // Check new player position
+        let moved_player: Player = world.read_model((game_id, caller));
+        assert(moved_player.x == 1, 'Player did not move right');
+        assert(moved_player.y == 1, 'Player y pos');
+        assert(moved_player.hp == 20, 'Error Player hp ');
+        assert(moved_player.max_hp == 20, 'Error max hp');
+        assert(moved_player.exp == 0, 'Error exp');
+        assert(moved_player.sequence == 0, 'Error sequence');
+
+        // Check if player card moved
+        let player_card: Card = world.read_model((game_id, 1, 1));
+        assert(player_card.card_id == CardIdEnum::Player, 'Player card ');
+        assert(player_card.x == 1, 'Player card x ');
+        assert(player_card.y == 1, 'Player card y ');
+        assert(player_card.hp == 20, 'Player card y ');
+        assert(player_card.max_hp == 20, 'Player card y ');
+
+        let new_card = Card {
+            game_id: 1,
+            x: 0,
+            y: 1,
+            card_id: CardIdEnum::DemonsDeal,
+            hp: 5,
+            max_hp: 5,
+            shield: 0,
+            max_shield: 0,
+            xp: 2,
+            tag: TagType::None,
+            flipped: false,
+        };
+        world.write_model(@new_card);
+
+        // Move player
+        card_knight.move_to_deal(game_id, Direction::Left,false,false);
+
+        // Check new player position
+        let moved_player: Player = world.read_model((game_id, caller));
+
+        println!("card hp {}", moved_player.hp);
+
+        assert(moved_player.x == 0, 'Player did not move left');
+        assert(moved_player.y == 1, 'Player y pos');
+        assert(moved_player.hp == 20, 'Error Player hp ');
+        assert(moved_player.max_hp == 20, 'Error max hp');
+        assert(moved_player.sequence == 1, 'Error sequence');
+    }
+
+
+
+
+    #[test]
+    #[should_panic(expected: ('Invalid card move to DD', 'ENTRYPOINT_FAILED'))]
+    #[available_gas(3000000000000000)]
+    fn test_move_deal_panic() {
+        // Setup
+        // caller
+        let _caller = starknet::contract_address_const::<0x0>();
+
+        let ndef = namespace_def();
+        let mut world = spawn_test_world([ndef].span());
+        world.sync_perms_and_inits(contract_defs());
+
+        let (actions_system_addr, _) = world.dns(@"actions").unwrap();
+        let card_knight = IActionsDispatcher { contract_address: actions_system_addr };
+
+        let game_id = 1;
+        card_knight.start_game(game_id, Hero::Knight);
+
+        let new_card = Card {
+            game_id: 1,
+            x: 2,
+            y: 1,
+            card_id: CardIdEnum::DemonsDeal,
+            hp: 5,
+            max_hp: 5,
+            shield: 0,
+            max_shield: 0,
+            xp: 2,
+            tag: TagType::None,
+            flipped: false,
+        };
+        world.write_model(@new_card);
+
+        // Move player
+        card_knight.move(game_id, Direction::Right);
+    }
+
+    #[test]
+    #[available_gas(3000000000000000)]
     fn test_move_boss() {
         // Setup
         // caller
@@ -1121,7 +1225,7 @@ mod tests {
         initial_player.hp = 30;
         initial_player.max_hp = 30;
         initial_player.level = 1;
-        initial_player.sequence = 15;
+        initial_player.sequence = 16;
 
         world.write_model(@initial_player);
         world.write_model(@initial_player);
@@ -1136,7 +1240,7 @@ mod tests {
         assert(moved_player.hp == 20, 'Error card hp ');
         assert(moved_player.max_hp == 30, 'Error max hp');
         assert(moved_player.exp == MONSTER1_XP, 'Error exp');
-        assert(moved_player.sequence == 16, 'Error sequence');
+        assert(moved_player.sequence == 17, 'Error sequence');
 
         // Check if player card moved
         let player_card: Card = world.read_model((game_id, moved_player.x, moved_player.y));
@@ -1236,8 +1340,7 @@ mod tests {
 
         // Initial player position
         let mut initial_player: Player = world.read_model((game_id, caller));
-        let initial_x = 1;
-        let initial_y = 1;
+   
         initial_player.hp = 30;
         initial_player.max_hp = 30;
         initial_player.level = 1;

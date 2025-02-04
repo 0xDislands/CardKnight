@@ -70,6 +70,7 @@ fn card_sequence() -> Array::<CardIdEnum> {
     card_sequence.append(CardIdEnum::Monster1);
     card_sequence.append(CardIdEnum::ItemHeal);
     card_sequence.append(CardIdEnum::ItemShield);
+    card_sequence.append(CardIdEnum::DemonsDeal);
     card_sequence.append(CardIdEnum::ItemHeal);
     card_sequence.append(CardIdEnum::Monster3);
     card_sequence.append(CardIdEnum::ItemChestEvil);
@@ -77,11 +78,11 @@ fn card_sequence() -> Array::<CardIdEnum> {
     card_sequence.append(CardIdEnum::ItemShield);
     card_sequence.append(CardIdEnum::Monster2);
     card_sequence.append(CardIdEnum::Boss1);
+    card_sequence.append(CardIdEnum::DemonsDeal);
     card_sequence.append(CardIdEnum::ItemChestEvil);
     card_sequence.append(CardIdEnum::Monster1);
     card_sequence.append(CardIdEnum::ItemHeal);
     card_sequence.append(CardIdEnum::Monster2);
-    //    card_sequence.append(CardIdEnum::ItemChestMiniGame);
     card_sequence.append(CardIdEnum::ItemShield);
     card_sequence.append(CardIdEnum::Monster3);
     card_sequence.append(CardIdEnum::ItemChestEvil);

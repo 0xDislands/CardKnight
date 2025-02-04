@@ -50,11 +50,11 @@ impl IPlayerSkillImpl of IPlayerSkill {
         mut player: Player,
         skill: Skill,
         mut world_storage: WorldStorage,
-        direction: Direction
+        direction: Direction,
     ) {
         if (skill == Skill::SkillFire) {
             assert(
-                *self.last_use == 0 || *self.last_use + SKILL_CD <= player.turn, 'Skill cooldown'
+                *self.last_use == 0 || *self.last_use + SKILL_CD <= player.turn, 'Skill cooldown',
             );
 
             let mut x: u32 = 0;
@@ -71,7 +71,7 @@ impl IPlayerSkillImpl of IPlayerSkill {
                                 ICardImpl::flip_cards(world_storage, player.game_id, false);
                             }
                             ICardImpl::spawn_card(
-                                world_storage, player.game_id, card.x, card.y, player
+                                world_storage, player.game_id, card.x, card.y, player,
                             );
                         } else {
                             world_storage.write_model(@card);
@@ -84,17 +84,17 @@ impl IPlayerSkillImpl of IPlayerSkill {
             };
         } else if (skill == Skill::PowerupSlash) {
             assert(
-                *self.last_use == 0 || *self.last_use + SKILL_CD <= player.turn, 'Skill cooldown'
+                *self.last_use == 0 || *self.last_use + SKILL_CD <= player.turn, 'Skill cooldown',
             );
             assert(
-                ICardImpl::is_move_inside(direction, player.x, player.y), 'Invalid skil direction'
+                ICardImpl::is_move_inside(direction, player.x, player.y), 'Invalid skil direction',
             );
 
             let (next_x, next_y) = match direction {
                 Direction::Up => { (player.x, player.y + 1) },
                 Direction::Down => { (player.x, player.y - 1) },
                 Direction::Left => { (player.x - 1, player.y) },
-                Direction::Right => { (player.x + 1, player.y) }
+                Direction::Right => { (player.x + 1, player.y) },
             };
 
             let mut card: Card = world_storage.read_model((player.game_id, next_x, next_y));
@@ -106,7 +106,7 @@ impl IPlayerSkillImpl of IPlayerSkill {
             }
         } else if (skill == Skill::Meteor) {
             assert(
-                *self.last_use == 0 || *self.last_use + SKILL_CD <= player.turn, 'Skill cooldown'
+                *self.last_use == 0 || *self.last_use + SKILL_CD <= player.turn, 'Skill cooldown',
             );
 
             let mut x: u32 = 0;
@@ -123,7 +123,7 @@ impl IPlayerSkillImpl of IPlayerSkill {
                                 ICardImpl::flip_cards(world_storage, player.game_id, false);
                             }
                             ICardImpl::spawn_card(
-                                world_storage, player.game_id, card.x, card.y, player
+                                world_storage, player.game_id, card.x, card.y, player,
                             );
                         } else {
                             card.hp -= damage;
@@ -137,18 +137,18 @@ impl IPlayerSkillImpl of IPlayerSkill {
             };
         } else if (skill == Skill::Hex) {
             assert(
-                *self.last_use == 0 || *self.last_use + SKILL_CD <= player.turn, 'Skill cooldown'
+                *self.last_use == 0 || *self.last_use + SKILL_CD <= player.turn, 'Skill cooldown',
             );
 
             assert(
-                ICardImpl::is_move_inside(direction, player.x, player.y), 'Invalid skil direction'
+                ICardImpl::is_move_inside(direction, player.x, player.y), 'Invalid skil direction',
             );
 
             let (next_x, next_y) = match direction {
                 Direction::Up => { (player.x, player.y + 1) },
                 Direction::Down => { (player.x, player.y - 1) },
                 Direction::Left => { (player.x - 1, player.y) },
-                Direction::Right => { (player.x + 1, player.y) }
+                Direction::Right => { (player.x + 1, player.y) },
             };
             let mut card: Card = world_storage
                 .read_model((player.game_id, next_x, next_y)); // Dummy default
@@ -175,22 +175,22 @@ impl IPlayerSkillImpl of IPlayerSkill {
         } else if (skill == Skill::Regeneration) {
             assert(
                 *self.last_use == 0 || *self.last_use + BIG_SKILL_CD <= player.turn,
-                'Skill cooldown'
+                'Skill cooldown',
             );
             player.hp = player.max_hp;
             world_storage.write_model(@player);
         } else if (skill == Skill::LifeSteal) {
             assert(
-                *self.last_use == 0 || *self.last_use + SKILL_CD <= player.turn, 'Skill cooldown'
+                *self.last_use == 0 || *self.last_use + SKILL_CD <= player.turn, 'Skill cooldown',
             );
             assert(
-                ICardImpl::is_move_inside(direction, player.x, player.y), 'Invalid skil direction'
+                ICardImpl::is_move_inside(direction, player.x, player.y), 'Invalid skil direction',
             );
             let (next_x, next_y) = match direction {
                 Direction::Up => { (player.x, player.y + 1) },
                 Direction::Down => { (player.x, player.y - 1) },
                 Direction::Left => { (player.x - 1, player.y) },
-                Direction::Right => { (player.x + 1, player.y) }
+                Direction::Right => { (player.x + 1, player.y) },
             };
             let mut card: Card = world_storage
                 .read_model((player.game_id, next_x, next_y)); // Dummy default
@@ -214,7 +214,7 @@ impl IPlayerSkillImpl of IPlayerSkill {
             }
         } else if (skill == Skill::Shuffle) {
             assert(
-                *self.last_use == 0 || *self.last_use + SKILL_CD <= player.turn, 'Skill cooldown'
+                *self.last_use == 0 || *self.last_use + SKILL_CD <= player.turn, 'Skill cooldown',
             );
             let mut x: u32 = 0;
             let mut y: u32 = 0;
@@ -222,10 +222,10 @@ impl IPlayerSkillImpl of IPlayerSkill {
                 while y <= MAP_RANGE {
                     if (x != player.x && y != player.y) {
                         let rx = random_index(
-                            x + player.x + player.game_id, y + player.x + player.game_id, 3
+                            x + player.x + player.game_id, y + player.x + player.game_id, 3,
                         );
                         let ry = random_index(
-                            x + player.y + player.game_id, y + player.y + player.game_id, 3
+                            x + player.y + player.game_id, y + player.y + player.game_id, 3,
                         );
                         if (rx != player.x && ry != player.y) {
                             let mut card: Card = world_storage.read_model((player.game_id, x, y));
@@ -247,7 +247,7 @@ impl IPlayerSkillImpl of IPlayerSkill {
         }
     }
     fn use_curse_skill(
-        self: @PlayerSkill, mut world_storage: WorldStorage, game_id: u32, x: u32, y: u32
+        self: @PlayerSkill, mut world_storage: WorldStorage, game_id: u32, x: u32, y: u32,
     ) {
         let mut card: Card = world_storage.read_model((game_id, x, y));
         assert(card.tag != TagType::NoMagic, 'immune to skill');
@@ -259,7 +259,7 @@ impl IPlayerSkillImpl of IPlayerSkill {
 
 
     fn use_swap_skill(
-        self: @PlayerSkill, mut player: Player, mut world_storage: WorldStorage, x: u32, y: u32
+        self: @PlayerSkill, mut player: Player, mut world_storage: WorldStorage, x: u32, y: u32,
     ) {
         assert(*self.last_use == 0 || *self.last_use + SKILL_CD <= player.turn, 'Skill cooldown');
 

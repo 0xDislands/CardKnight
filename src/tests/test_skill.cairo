@@ -190,7 +190,6 @@ mod tests {
         player.turn = 10;
         player_skill.use_skill(player, Skill::PowerupSlash, world, Direction::Up);
 
-        let mut card: Card = world.read_model((1, 0, 0));
     }
 
 

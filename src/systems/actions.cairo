@@ -7,22 +7,25 @@ use card_knight::models::player::{Hero, Scores};
 trait IActions<T> {
     fn start_game(ref self: T, game_id: u32, hero: Hero);
     fn move(ref self: T, game_id: u32, direction: Direction);
+    fn move_to_deal(
+        ref self: T, game_id: u32, direction: Direction, selection: bool, wheel_result: bool,
+    );
     fn use_skill(ref self: T, game_id: u32, skill: Skill, direction: Direction);
     fn use_swap_skill(ref self: T, game_id: u32, x: u32, y: u32);
     fn use_curse_skill(ref self: T, game_id: u32, x: u32, y: u32);
     fn level_up(ref self: T, game_id: u32, upgrade: u32);
     fn set_contract(ref self: T, index: u128, new_address: ContractAddress);
 
-    fn get_total_weekly_players(self: @T, week: u64,) -> u128;
-    fn get_player_weekly_highest_score(self: @T, player: ContractAddress, week: u64,) -> u32;
+    fn get_total_weekly_players(self: @T, week: u64) -> u128;
+    fn get_player_weekly_highest_score(self: @T, player: ContractAddress, week: u64) -> u32;
     fn get_weekly_scores(
-        self: @T, player: ContractAddress, week: u64, start: u128, end: u128
+        self: @T, player: ContractAddress, week: u64, start: u128, end: u128,
     ) -> Array<Scores>;
 
-    fn winner_of_the_week(self: @T, week: u64,) -> ContractAddress;
-    fn hero_skills(self: @T, hero: Hero,) -> (Skill, Skill, Skill);
-    fn levelUpWaiting(self: @T, user: ContractAddress, game_id: u32,) -> bool;
-    fn levelUpOptions(self: @T, user: ContractAddress, game_id: u32,) -> (ByteArray, ByteArray);
+    fn winner_of_the_week(self: @T, week: u64) -> ContractAddress;
+    fn hero_skills(self: @T, hero: Hero) -> (Skill, Skill, Skill);
+    fn levelUpWaiting(self: @T, user: ContractAddress, game_id: u32) -> bool;
+    fn levelUpOptions(self: @T, user: ContractAddress, game_id: u32) -> (ByteArray, ByteArray);
     fn hero_skills_cd(self: @T, game_id: u32, player_address: ContractAddress) -> (u32, u32, u32);
     fn skill_cd(self: @T, game_id: u32, player_address: ContractAddress, skill: Skill) -> u32;
 }
@@ -32,8 +35,8 @@ mod actions {
     use starknet::{ContractAddress, get_caller_address, get_block_timestamp};
     use card_knight::models::{
         game::{Game, Direction, GameState, TagType},
-        card::{Card, CardIdEnum, ICardImpl, ICardTrait,},
-        player::{Player, IPlayer, Hero, Scores, WeeklyIndex, TotalWeeklyPlayers, WeeklyWinner}
+        card::{Card, CardIdEnum, ICardImpl, ICardTrait},
+        player::{Player, IPlayer, Hero, Scores, WeeklyIndex, TotalWeeklyPlayers, WeeklyWinner},
     };
     use card_knight::models::skill::{Skill, PlayerSkill, IPlayerSkill};
     use card_knight::models::game::{apply_tag_effects, is_silent, Contracts};
@@ -48,7 +51,7 @@ mod actions {
         config::STRK_RECEIVER,
     };
     use card_knight::config::IDislandReward::{
-        IDislandRewardDispatcher, IDislandRewardDispatcherTrait
+        IDislandRewardDispatcher, IDislandRewardDispatcherTrait,
     };
     use card_knight::config::level::{SKILL_LEVEL, BIG_SKILL_CD, SKILL_CD};
     use card_knight::config::level;
@@ -64,15 +67,6 @@ mod actions {
     const WEEK: u64 = 604800;
     // TODO test fails when activated
     // The only requirement is that the function is named `dojo_init`.
-    fn dojo_init(ref self: ContractState, core: ContractAddress, rewards: ContractAddress) {
-        let mut world = self.world(@"card_knight");
-        let mut contract: Contracts = world.read_model(2);
-        contract.address = rewards;
-        world.write_model(@contract);
-        let mut contract: Contracts = world.read_model(1);
-        contract.address = core;
-        world.write_model(@contract);
-    }
 
     #[abi(embed_v0)]
     impl PlayerActionsImpl of IActions<ContractState> {
@@ -109,7 +103,7 @@ mod actions {
                                     xp: 0,
                                     tag: TagType::None,
                                     flipped: false,
-                                }
+                                },
                             );
 
                         let mut player = Player {
@@ -129,7 +123,7 @@ mod actions {
                             alive: true,
                             poisoned: 0,
                             turn: 0,
-                            heroId: hero
+                            heroId: hero,
                         };
 
                         world.write_model(@player);
@@ -155,7 +149,7 @@ mod actions {
                                         xp: MONSTER1_XP,
                                         tag: TagType::None,
                                         flipped: false,
-                                    }
+                                    },
                                 );
 
                             MONSTER_COUNT -= 1;
@@ -174,7 +168,7 @@ mod actions {
                                         xp: HEAL_XP,
                                         tag: TagType::None,
                                         flipped: false,
-                                    }
+                                    },
                                 );
                         }
                     }
@@ -187,7 +181,13 @@ mod actions {
 
 
         // Will update assert
-        fn move(ref self: ContractState, game_id: u32, direction: Direction) {
+        fn move_to_deal(
+            ref self: ContractState,
+            game_id: u32,
+            direction: Direction,
+            selection: bool,
+            wheel_result: bool,
+        ) {
             let player_address = get_caller_address();
 
             let mut world = self.world(@"card_knight");
@@ -209,16 +209,23 @@ mod actions {
                     assert!(player.x != 0, "Invalid move");
                     (player.x - 1, player.y)
                 },
-                Direction::Right => { (player.x + 1, player.y) }
+                Direction::Right => { (player.x + 1, player.y) },
             };
             assert!(ICardImpl::is_inside(next_x, next_y) == true, "Invalid move");
 
             let mut existingCard: Card = world.read_model((game_id, next_x, next_y));
 
-            // Apply Effect was made to handle all kind of card => update apply_effect when more
-            // cases are added
-            let result = ICardImpl::apply_effect(world, player, existingCard);
-            player = result;
+            assert(existingCard.card_id == CardIdEnum::DemonsDeal, 'Invalid card move to DD');
+
+            if (selection) {
+                if (wheel_result) {
+                    let new_card = ICardImpl::get_deal_card(game_id, next_x, next_y);
+                    let result = ICardImpl::apply_effect(world, player, new_card);
+                    player = result;
+                } else {
+                    player.hp = player.hp - 1;
+                }
+            }
 
             // if card is ItemChest dont change any position
             if (existingCard.card_id == CardIdEnum::ItemChest) {
@@ -236,7 +243,7 @@ mod actions {
 
             // Move cards after use
             let moveCard = ICardImpl::get_move_card(
-                world, game_id, existingCard.x, existingCard.y, player
+                world, game_id, existingCard.x, existingCard.y, player,
             );
             let mut moveCard_x = moveCard.x;
             let mut moveCard_y = moveCard.y;
@@ -278,7 +285,7 @@ mod actions {
                     if ICardImpl::is_inside(old_x, old_y) {
                         let mut card: Card = world.read_model((game_id, old_x, old_y));
                         let card_move = ICardImpl::move_to_position(
-                            game_id, card, x_destination, y_destination
+                            game_id, card, x_destination, y_destination,
                         );
                         world.write_model(@card_move);
 
@@ -292,7 +299,179 @@ mod actions {
                 moveCard_y = y_destination;
             } else {
                 let card_move = ICardImpl::move_to_position(
-                    game_id, moveCard, old_player_card.x, old_player_card.y
+                    game_id, moveCard, old_player_card.x, old_player_card.y,
+                );
+                world.write_model(@card_move);
+            }
+
+            // delete!(world, (existingCard));
+            let new_player_card = Card {
+                game_id,
+                x: next_x,
+                y: next_y,
+                card_id: CardIdEnum::Player,
+                hp: player.hp,
+                max_hp: player.max_hp,
+                shield: player.shield,
+                max_shield: player.max_shield,
+                xp: player.exp,
+                tag: TagType::None,
+                flipped: old_player_card.flipped,
+            };
+            world.write_model(@new_player_card);
+
+            player.x = existingCard.x;
+            player.y = existingCard.y;
+            player.turn += 1;
+
+            if (player.poisoned != 0) {
+                player.take_damage(1);
+                player.poisoned -= 1;
+            }
+            world.write_model(@player);
+            apply_tag_effects(world, player);
+            if (player.alive == false) {
+                let week = get_block_timestamp() / WEEK;
+                let mut week_index: WeeklyIndex = world.read_model((week, player_address));
+
+                if (week_index.index == 0) {
+                    let mut total_players: TotalWeeklyPlayers = world.read_model(week);
+
+                    // Start from 0
+                    week_index.index = total_players.total + 1;
+                    world.write_model(@week_index);
+                    total_players.total += 1;
+                    world.write_model(@total_players);
+                };
+
+                let mut scores: Scores = world.read_model((week, week_index.index));
+                if scores.high_score < player.total_xp {
+                    scores.high_score = player.total_xp;
+                    world.write_model(@scores);
+                    let mut weekly_winner: WeeklyWinner = world.read_model(week);
+
+                    if (weekly_winner.score < scores.high_score) {
+                        weekly_winner.address = player_address;
+                        weekly_winner.score = scores.high_score;
+                        world.write_model(@weekly_winner);
+                    }
+                }
+                // Player is dead game finished transfer xdil
+
+            }
+
+            ICardImpl::spawn_card(world, game_id, moveCard_x, moveCard_y, player);
+        }
+
+
+        // Will update assert
+        fn move(ref self: ContractState, game_id: u32, direction: Direction) {
+            let player_address = get_caller_address();
+
+            let mut world = self.world(@"card_knight");
+            let mut player: Player = world.read_model((game_id, player_address));
+
+            assert(self.levelUpWaiting(player_address, game_id) == false, 'Level up waiting');
+
+            assert(player.hp != 0, 'Player is dead');
+            let mut _old_player_card: Card = world.read_model((game_id, player.x, player.y));
+
+            // delete!(world, (old_player_card));
+            let (next_x, next_y) = match direction {
+                Direction::Up => { (player.x, player.y + 1) },
+                Direction::Down => {
+                    assert!(player.y != 0, "Invalid move");
+                    (player.x, player.y - 1)
+                },
+                Direction::Left => {
+                    assert!(player.x != 0, "Invalid move");
+                    (player.x - 1, player.y)
+                },
+                Direction::Right => { (player.x + 1, player.y) },
+            };
+            assert!(ICardImpl::is_inside(next_x, next_y) == true, "Invalid move");
+
+            let mut existingCard: Card = world.read_model((game_id, next_x, next_y));
+            assert(existingCard.card_id != CardIdEnum::DemonsDeal, 'Invalid card move to DD');
+
+            // Apply Effect was made to handle all kind of card => update apply_effect when more
+            // cases are added
+            let result = ICardImpl::apply_effect(world, player, existingCard);
+            player = result;
+
+            // if card is ItemChest dont change any position
+            if (existingCard.card_id == CardIdEnum::ItemChest) {
+                player.turn += 1;
+                if (player.poisoned != 0) {
+                    player.take_damage(1);
+                    player.poisoned -= 1;
+                }
+                world.write_model(@player);
+
+                return ();
+            };
+
+            let mut old_player_card: Card = world.read_model((game_id, player.x, player.y));
+
+            // Move cards after use
+            let moveCard = ICardImpl::get_move_card(
+                world, game_id, existingCard.x, existingCard.y, player,
+            );
+            let mut moveCard_x = moveCard.x;
+            let mut moveCard_y = moveCard.y;
+            if (ICardImpl::is_corner(player)) {
+                let mut x_destination = player.x;
+                let mut y_destination = player.y;
+
+                let is_x_pos = player.x >= moveCard_x;
+                let is_y_pos = player.y >= moveCard_y;
+
+                let x_direction = if (is_x_pos) {
+                    player.x - moveCard_x
+                } else {
+                    moveCard_x - player.x
+                };
+                let y_direction = if (is_y_pos) {
+                    player.y - moveCard_y
+                } else {
+                    moveCard_y - player.y
+                };
+
+                while true {
+                    let old_x = if (is_x_pos && x_direction <= x_destination) {
+                        x_destination - x_direction
+                    } else if (!is_x_pos) {
+                        x_destination + x_direction
+                    } else {
+                        break;
+                    };
+
+                    let old_y = if (is_y_pos && y_direction <= y_destination) {
+                        y_destination - y_direction
+                    } else if (!is_y_pos) {
+                        y_destination + y_direction
+                    } else {
+                        break;
+                    };
+
+                    if ICardImpl::is_inside(old_x, old_y) {
+                        let mut card: Card = world.read_model((game_id, old_x, old_y));
+                        let card_move = ICardImpl::move_to_position(
+                            game_id, card, x_destination, y_destination,
+                        );
+                        world.write_model(@card_move);
+
+                        x_destination = old_x;
+                        y_destination = old_y;
+                    } else {
+                        break;
+                    }
+                };
+                moveCard_x = x_destination;
+                moveCard_y = y_destination;
+            } else {
+                let card_move = ICardImpl::move_to_position(
+                    game_id, moveCard, old_player_card.x, old_player_card.y,
                 );
                 world.write_model(@card_move);
             }
@@ -458,7 +637,7 @@ mod actions {
             assert(x < 3 && y < 3, 'Position not valid');
             assert(
                 player_skill.last_use == 0 || player_skill.last_use + BIG_SKILL_CD <= player.turn,
-                'Skill cooldown'
+                'Skill cooldown',
             );
 
             assert(player_skill.is_active(player.level), 'User level not enough');
@@ -503,14 +682,14 @@ mod actions {
 
             assert(
                 get_caller_address() == strk_receiver || get_caller_address() == owner.address,
-                'Caller not owner'
+                'Caller not owner',
             );
             let mut contract: Contracts = world.read_model(index);
             contract.address = new_address;
             world.write_model(@contract);
         }
 
-        fn get_total_weekly_players(self: @ContractState, week: u64,) -> u128 {
+        fn get_total_weekly_players(self: @ContractState, week: u64) -> u128 {
             let mut world = self.world(@"card_knight");
 
             let mut total_players: TotalWeeklyPlayers = world.read_model(week);
@@ -529,7 +708,7 @@ mod actions {
 
 
         fn get_weekly_scores(
-            self: @ContractState, player: ContractAddress, week: u64, start: u128, end: u128
+            self: @ContractState, player: ContractAddress, week: u64, start: u128, end: u128,
         ) -> Array<Scores> {
             let mut scores: Array<Scores> = ArrayTrait::new();
             let mut world = self.world(@"card_knight");
@@ -553,14 +732,14 @@ mod actions {
             scores
         }
 
-        fn winner_of_the_week(self: @ContractState, week: u64,) -> ContractAddress {
+        fn winner_of_the_week(self: @ContractState, week: u64) -> ContractAddress {
             let mut world = self.world(@"card_knight");
             let mut weekly_winner: WeeklyWinner = world.read_model(week);
             weekly_winner.address
         }
 
         fn hero_skills_cd(
-            self: @ContractState, game_id: u32, player_address: ContractAddress
+            self: @ContractState, game_id: u32, player_address: ContractAddress,
         ) -> (u32, u32, u32) {
             let mut world = self.world(@"card_knight");
             let mut player_: Player = world.read_model((game_id, player_address));
@@ -574,7 +753,7 @@ mod actions {
         }
 
         fn skill_cd(
-            self: @ContractState, game_id: u32, player_address: ContractAddress, skill: Skill
+            self: @ContractState, game_id: u32, player_address: ContractAddress, skill: Skill,
         ) -> u32 {
             let mut world = self.world(@"card_knight");
             let mut player: Player = world.read_model((game_id, player_address));
@@ -598,7 +777,7 @@ mod actions {
         }
 
 
-        fn hero_skills(self: @ContractState, hero: Hero,) -> (Skill, Skill, Skill) {
+        fn hero_skills(self: @ContractState, hero: Hero) -> (Skill, Skill, Skill) {
             if (hero == Hero::Knight) {
                 (Skill::PowerupSlash, Skill::Teleport, Skill::Regeneration)
             } else if (hero == Hero::Shaman) {
@@ -621,7 +800,7 @@ mod actions {
                 3 => player.total_xp >= level::LEVEL4_XP,
                 4 => player.total_xp >= level::LEVEL5_XP,
                 5 => player.total_xp >= level::LEVEL6_XP,
-                _ => false
+                _ => false,
             };
             result
         }
@@ -698,7 +877,7 @@ mod actions {
                     let option1: ByteArray = "";
                     let option2: ByteArray = "";
                     (option1, option2)
-                }
+                },
             }
         }
     }

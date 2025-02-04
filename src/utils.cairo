@@ -6,7 +6,7 @@ use card_knight::config::{map::{X_RANGE, Y_RANGE, MAP_AMPLITUDE}};
 
 use card_knight::models::{
     game::{Game, Direction}, card::{Card, CardIdEnum, ICardImpl},
-    player::{Player, IPlayerImpl, LevelUpOptions}
+    player::{Player, IPlayerImpl, LevelUpOptions},
 };
 
 use cubit::f64::procgen::simplex3;
@@ -33,7 +33,7 @@ fn monster_type_at_position(x: u32, y: u32) -> (u32, u32) {
     let vec = Vec3Trait::new(
         FixedTrait::from_felt(x.into()) / FixedTrait::from_felt(MAP_AMPLITUDE.into()),
         FixedTrait::from_felt(0),
-        FixedTrait::from_felt(y.into()) / FixedTrait::from_felt(MAP_AMPLITUDE.into())
+        FixedTrait::from_felt(y.into()) / FixedTrait::from_felt(MAP_AMPLITUDE.into()),
     );
 
     // compute simplex noise
@@ -59,7 +59,7 @@ fn get_level_up_options(x: u32, y: u32, sequence: u32) -> Array<LevelUpOptions> 
     let vec = Vec3Trait::new(
         FixedTrait::from_felt(x.into()) / FixedTrait::from_felt(MAP_AMPLITUDE.into()),
         FixedTrait::from_felt(0),
-        FixedTrait::from_felt(y.into()) / FixedTrait::from_felt(MAP_AMPLITUDE.into())
+        FixedTrait::from_felt(y.into()) / FixedTrait::from_felt(MAP_AMPLITUDE.into()),
     );
 
     // compute simplex noise
@@ -112,7 +112,7 @@ fn random_index(x: u32, y: u32, max: u32) -> u32 {
     let vec = Vec3Trait::new(
         FixedTrait::from_felt(x.into()) / FixedTrait::from_felt(MAP_AMPLITUDE.into()),
         FixedTrait::from_felt(0),
-        FixedTrait::from_felt(y.into()) / FixedTrait::from_felt(MAP_AMPLITUDE.into())
+        FixedTrait::from_felt(y.into()) / FixedTrait::from_felt(MAP_AMPLITUDE.into()),
     );
 
     // compute simplex noise

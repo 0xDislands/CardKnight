@@ -6,7 +6,7 @@ use starknet::ContractAddress;
 use card_knight::config::card::{
     MONSTER1_BASE_HP, MONSTER1_MULTIPLE, MONSTER2_BASE_HP, MONSTER2_MULTIPLE, MONSTER3_BASE_HP,
     MONSTER3_MULTIPLE, MONSTER1_XP, MONSTER2_XP, MONSTER3_XP, BOSS_XP, HEAL_XP, POISON_XP,
-    BOSS_BASE_HP, SHIELD_XP, CHEST_XP, POISON_TURN, INCREASE_HP_RATIO, card_sequence
+    BOSS_BASE_HP, SHIELD_XP, CHEST_XP, POISON_TURN, INCREASE_HP_RATIO, card_sequence,
 };
 use card_knight::config::map::{MAP_RANGE};
 use card_knight::utils::random_index;
@@ -31,7 +31,7 @@ struct Card {
     max_shield: u32,
     xp: u32,
     tag: TagType,
-    flipped: bool
+    flipped: bool,
 }
 
 #[generate_trait]
@@ -75,7 +75,7 @@ impl ICardImpl of ICardTrait {
             CardIdEnum::ItemChest => {
                 let index = random_index(player.hp + player.x + card.x, player.y + card.y, 3);
                 let card_value = random_index(
-                    player.hp + player.x + card.x, player.y + card.y, player.hp / 2
+                    player.hp + player.x + card.x, player.y + card.y, player.hp / 2,
                 );
 
                 //  heal
@@ -160,7 +160,7 @@ impl ICardImpl of ICardTrait {
                 player.add_exp(SHIELD_XP);
                 return player;
             },
-            _ => { return player; }
+            _ => { return player; },
         }
     }
 
@@ -204,7 +204,7 @@ impl ICardImpl of ICardTrait {
             Direction::Up => { MAP_RANGE >= y + 1 },
             Direction::Down => { y > 0 },
             Direction::Left => { x > 0 },
-            Direction::Right => { MAP_RANGE >= x + 1 }
+            Direction::Right => { MAP_RANGE >= x + 1 },
         }
     }
 
@@ -220,7 +220,7 @@ impl ICardImpl of ICardTrait {
     // internal functions, might need to finish early so we won't have trouble in db when migrate,
     // which might caused by mismatch data type
     fn get_neighbour_card(
-        world_storage: WorldStorage, game_id: u32, x: u32, y: u32, direction: Direction
+        world_storage: WorldStorage, game_id: u32, x: u32, y: u32, direction: Direction,
     ) -> (bool, Card) {
         let mut neighbour_card: Card = world_storage.read_model((game_id, x, y)); // Dummy default
         let is_inside = Self::is_move_inside(direction, x, y);
@@ -241,14 +241,14 @@ impl ICardImpl of ICardTrait {
             },
             Direction::Right(()) => {
                 neighbour_card = world_storage.read_model((game_id, x + 1, y));
-            }
+            },
         }
         (is_inside, neighbour_card)
     }
 
 
     fn get_move_card2(
-        mut world_storage: WorldStorage, game_id: u32, x: u32, y: u32, player: Player
+        mut world_storage: WorldStorage, game_id: u32, x: u32, y: u32, player: Player,
     ) -> Card {
         let cx: felt252 = x.into();
         let cy: felt252 = y.into();
@@ -286,8 +286,58 @@ impl ICardImpl of ICardTrait {
     }
 
 
+    fn get_deal_card(game_id: u32, x: u32, y: u32) -> Card {
+        let rn = (game_id + x + y) % 3;
+        if (rn == 0) {
+            let card = Card {
+                game_id,
+                x,
+                y,
+                card_id: CardIdEnum::ItemHeal,
+                hp: 3,
+                max_hp: 3,
+                shield: 0,
+                max_shield: 0,
+                xp: HEAL_XP,
+                tag: TagType::None,
+                flipped: false,
+            };
+            return (card);
+        } else if (rn == 1) {
+            let card = Card {
+                game_id,
+                x,
+                y,
+                card_id: CardIdEnum::ItemShield,
+                hp: 0,
+                max_hp: 0,
+                shield: 3,
+                max_shield: 6,
+                xp: SHIELD_XP,
+                tag: TagType::None,
+                flipped: false,
+            };
+            return (card);
+        }
+
+        Card {
+            game_id,
+            x,
+            y,
+            card_id: CardIdEnum::ItemHeal,
+            hp: 4,
+            max_hp: 5,
+            shield: 0,
+            max_shield: 0,
+            xp: HEAL_XP,
+            tag: TagType::None,
+            flipped: false,
+        }
+    }
+
+
     fn get_move_card(
-        mut world_storage: WorldStorage, game_id: u32, x: u32, y: u32, player: Player
+        mut world_storage: WorldStorage, game_id: u32, x: u32, y: u32, player: Player,
     ) -> Card {
         let mut card: Card = world_storage.read_model((game_id, x, y)); // Dummy default
 
@@ -327,7 +377,7 @@ impl ICardImpl of ICardTrait {
 
         let mut neighbour_cards: @Array<Card> = {
             let mut arr: Array<Card> = Self::get_all_neighbours(
-                world_storage, game_id, player.x, player.y
+                world_storage, game_id, player.x, player.y,
             );
             @arr
         };
@@ -414,7 +464,7 @@ impl ICardImpl of ICardTrait {
     }
 
     fn spawn_card(
-        mut world_storage: WorldStorage, game_id: u32, x: u32, y: u32, player: Player
+        mut world_storage: WorldStorage, game_id: u32, x: u32, y: u32, player: Player,
     ) -> (Card, bool) {
         let mut card_sequence = card_sequence();
         let mut sequence = player.sequence;
@@ -569,7 +619,7 @@ impl ICardImpl of ICardTrait {
         TagType::None
     }
 
-    fn is_monster(self: @Card,) -> bool {
+    fn is_monster(self: @Card) -> bool {
         match self.card_id {
             CardIdEnum::Monster1 => true,
             CardIdEnum::Monster2 => true,
@@ -584,16 +634,16 @@ impl ICardImpl of ICardTrait {
     ) -> Array<Card> {
         let mut arr: Array<Card> = ArrayTrait::new();
         let (isInsideU, neighbour_up) = Self::get_neighbour_card(
-            world, game_id, x, y, Direction::Up
+            world, game_id, x, y, Direction::Up,
         );
         let (isInsideD, neighbour_down) = Self::get_neighbour_card(
-            world, game_id, x, y, Direction::Down
+            world, game_id, x, y, Direction::Down,
         );
         let (isInsideL, neighbour_left) = Self::get_neighbour_card(
-            world, game_id, x, y, Direction::Left
+            world, game_id, x, y, Direction::Left,
         );
         let (isInsideR, neighbour_right) = Self::get_neighbour_card(
-            world, game_id, x, y, Direction::Right
+            world, game_id, x, y, Direction::Right,
         );
 
         if isInsideU {
@@ -648,7 +698,8 @@ enum CardIdEnum {
     ItemChestMiniGame,
     ItemChestEvil,
     ItemShield,
-    Hex
+    Hex,
+    DemonsDeal,
 }
 
 impl ImplCardIdEnumIntoFelt252 of Into<CardIdEnum, felt252> {
@@ -666,7 +717,8 @@ impl ImplCardIdEnumIntoFelt252 of Into<CardIdEnum, felt252> {
             CardIdEnum::ItemChestMiniGame => 8,
             CardIdEnum::ItemChestEvil => 9,
             CardIdEnum::ItemShield => 10,
-            CardIdEnum::Hex => 11
+            CardIdEnum::Hex => 11,
+            CardIdEnum::DemonsDeal => 12,
         }
     }
 }

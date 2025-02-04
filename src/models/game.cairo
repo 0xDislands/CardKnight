@@ -1,7 +1,7 @@
 use starknet::ContractAddress;
 use card_knight::config::map::{MAP_RANGE};
 use card_knight::models::player::{Player, IPlayer, Hero};
-use card_knight::models::card::{Card, ICardTrait,};
+use card_knight::models::card::{Card, ICardTrait};
 use dojo::model::{ModelStorage, ModelValueStorage};
 use dojo::world::{IWorld, IWorldDispatcher, IWorldDispatcherTrait, WorldStorage};
 
@@ -14,7 +14,7 @@ struct Game {
     #[key]
     player: ContractAddress,
     highest_score: u64,
-    game_state: GameState
+    game_state: GameState,
 }
 
 #[derive(Serde, Drop, Copy, PartialEq, Introspect)]
@@ -23,7 +23,7 @@ enum GameState {
     Playing,
     Win,
     Lose,
-    WaitingForLevelUpOption
+    WaitingForLevelUpOption,
 }
 
 #[derive(Serde, Drop, Copy, PartialEq, Introspect)]
@@ -41,7 +41,7 @@ enum TagType {
     NoMagic,
     Revenge,
     NoHope,
-    Silent
+    Silent,
 }
 
 // set contracts
