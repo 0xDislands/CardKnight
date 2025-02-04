@@ -7,9 +7,7 @@ use card_knight::models::player::{Hero, Scores};
 trait IActions<T> {
     fn start_game(ref self: T, game_id: u32, hero: Hero);
     fn move(ref self: T, game_id: u32, direction: Direction);
-    fn move_to_deal(
-        ref self: T, game_id: u32, direction: Direction, selection: bool, wheel_result: bool,
-    );
+    fn move_to_deal(ref self: T, game_id: u32, direction: Direction, selection: bool,);
     fn use_skill(ref self: T, game_id: u32, skill: Skill, direction: Direction);
     fn use_swap_skill(ref self: T, game_id: u32, x: u32, y: u32);
     fn use_curse_skill(ref self: T, game_id: u32, x: u32, y: u32);
@@ -28,6 +26,11 @@ trait IActions<T> {
     fn levelUpOptions(self: @T, user: ContractAddress, game_id: u32) -> (ByteArray, ByteArray);
     fn hero_skills_cd(self: @T, game_id: u32, player_address: ContractAddress) -> (u32, u32, u32);
     fn skill_cd(self: @T, game_id: u32, player_address: ContractAddress, skill: Skill) -> u32;
+
+
+    fn open_lock(ref self: T, game_id: u32, direction: Direction, wheel_result: bool,);
+
+    fn demon_deals(self: @T, user: ContractAddress, game_id: u32,) -> (ByteArray, ByteArray);
 }
 
 #[dojo::contract]
@@ -46,6 +49,7 @@ mod actions {
         card::{
             MONSTER1_BASE_HP, MONSTER1_MULTIPLE, MONSTER2_BASE_HP, MONSTER2_MULTIPLE,
             MONSTER3_BASE_HP, MONSTER3_MULTIPLE, HEAL_HP, SHIELD_HP, MONSTER1_XP, HEAL_XP,
+            POISON_XP, SHIELD_XP,
         },
         player::PLAYER_STARTING_POINT, level::{MONSTER_TO_START_WITH, ITEM_TO_START_WITH},
         config::STRK_RECEIVER,
@@ -180,13 +184,109 @@ mod actions {
         }
 
 
+        fn demon_deals(
+            self: @ContractState, user: ContractAddress, game_id: u32,
+        ) -> (ByteArray, ByteArray) {
+            let mut world = self.world(@"card_knight");
+            let mut player: Player = world.read_model((game_id, user));
+
+            let option1: ByteArray = "Lose 33% of current HP (rounded down).";
+            let option2: ByteArray = "Gain 3 XP";
+            (option1, option2)
+        }
+
+
+        fn open_lock(
+            ref self: ContractState, game_id: u32, direction: Direction, wheel_result: bool,
+        ) {
+            let player_address = get_caller_address();
+
+            let mut world = self.world(@"card_knight");
+            let mut player: Player = world.read_model((game_id, player_address));
+
+            assert(self.levelUpWaiting(player_address, game_id) == false, 'Level up waiting');
+
+            assert(player.hp != 0, 'Player is dead');
+            let mut _old_player_card: Card = world.read_model((game_id, player.x, player.y));
+
+            // delete!(world, (old_player_card));
+            let (next_x, next_y) = match direction {
+                Direction::Up => { (player.x, player.y + 1) },
+                Direction::Down => {
+                    assert!(player.y != 0, "Invalid move");
+                    (player.x, player.y - 1)
+                },
+                Direction::Left => {
+                    assert!(player.x != 0, "Invalid move");
+                    (player.x - 1, player.y)
+                },
+                Direction::Right => { (player.x + 1, player.y) },
+            };
+            assert!(ICardImpl::is_inside(next_x, next_y) == true, "Invalid move");
+
+            let mut existingCard: Card = world.read_model((game_id, next_x, next_y));
+
+            assert(existingCard.card_id == CardIdEnum::Lock, 'Invalid card move to Lock');
+            if (wheel_result == false) {
+                player.hp = player.hp - 1;
+                world.write_model(@player);
+                return ();
+            }
+
+            let rnd = (player.x.into() * 3 + player.y.into() * 3 + game_id.into() + player.hp) % 10;
+
+            if (rnd < 5) {
+                let new_card = Card {
+                    game_id: game_id,
+                    x: next_x,
+                    y: next_y,
+                    card_id: CardIdEnum::ItemHeal,
+                    hp: rnd,
+                    max_hp: rnd,
+                    shield: 0,
+                    max_shield: 0,
+                    xp: HEAL_XP,
+                    tag: TagType::None,
+                    flipped: existingCard.flipped,
+                };
+                world.write_model(@new_card);
+            } else if (rnd < 8) {
+                let new_card = Card {
+                    game_id: game_id,
+                    x: next_x,
+                    y: next_y,
+                    card_id: CardIdEnum::ItemShield,
+                    hp: 0,
+                    max_hp: 0,
+                    shield: 3,
+                    max_shield: 5,
+                    xp: SHIELD_XP,
+                    tag: TagType::None,
+                    flipped: existingCard.flipped,
+                };
+                world.write_model(@new_card);
+            } else {
+                let new_card = Card {
+                    game_id: game_id,
+                    x: next_x,
+                    y: next_y,
+                    card_id: CardIdEnum::ItemPoison,
+                    hp: 1,
+                    max_hp: 1,
+                    shield: 0,
+                    max_shield: 0,
+                    xp: POISON_XP,
+                    tag: TagType::None,
+                    flipped: existingCard.flipped,
+                };
+                world.write_model(@new_card);
+            }
+        }
+
+
         // Will update assert
         fn move_to_deal(
-            ref self: ContractState,
-            game_id: u32,
-            direction: Direction,
-            selection: bool,
-            wheel_result: bool,
+            ref self: ContractState, game_id: u32, direction: Direction, selection: bool,
         ) {
             let player_address = get_caller_address();
 
@@ -218,13 +318,10 @@ mod actions {
             assert(existingCard.card_id == CardIdEnum::DemonsDeal, 'Invalid card move to DD');
 
             if (selection) {
-                if (wheel_result) {
-                    let new_card = ICardImpl::get_deal_card(game_id, next_x, next_y);
-                    let result = ICardImpl::apply_effect(world, player, new_card);
-                    player = result;
-                } else {
-                    player.hp = player.hp - 1;
-                }
+                //let rnd = player.x + player.y + get_block_timestamp() % 2;
+                player.hp = player.hp - (player.hp / 3);
+                player.exp += 3;
+                player.total_xp += 3;
             }
 
             // if card is ItemChest dont change any position
@@ -392,7 +489,11 @@ mod actions {
             assert!(ICardImpl::is_inside(next_x, next_y) == true, "Invalid move");
 
             let mut existingCard: Card = world.read_model((game_id, next_x, next_y));
-            assert(existingCard.card_id != CardIdEnum::DemonsDeal, 'Invalid card move to DD');
+            assert(
+                existingCard.card_id != CardIdEnum::DemonsDeal
+                    && existingCard.card_id != CardIdEnum::Lock,
+                'Invalid card move to DD'
+            );
 
             // Apply Effect was made to handle all kind of card => update apply_effect when more
             // cases are added

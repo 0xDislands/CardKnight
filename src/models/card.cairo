@@ -700,6 +700,7 @@ enum CardIdEnum {
     ItemShield,
     Hex,
     DemonsDeal,
+    Lock
 }
 
 impl ImplCardIdEnumIntoFelt252 of Into<CardIdEnum, felt252> {
@@ -719,6 +720,7 @@ impl ImplCardIdEnumIntoFelt252 of Into<CardIdEnum, felt252> {
             CardIdEnum::ItemShield => 10,
             CardIdEnum::Hex => 11,
             CardIdEnum::DemonsDeal => 12,
+            CardIdEnum::Lock => 13,
         }
     }
 }

@@ -189,7 +189,6 @@ mod tests {
         let mut player_skill: PlayerSkill = world.read_model((1, caller, Skill::PowerupSlash));
         player.turn = 10;
         player_skill.use_skill(player, Skill::PowerupSlash, world, Direction::Up);
-
     }
 
 
