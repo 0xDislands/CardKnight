@@ -1252,8 +1252,8 @@
   },
   "contracts": [
     {
-      "address": "0x2b4d8338583617b6d94fc3d8c279212f8b34f24819530a7149782ff0d9f407a",
-      "class_hash": "0x15a5b563263bb17dab5a0771210044136371df5e8b5d2a1f59e94d441d6f073",
+      "address": "0x2197535aea9d862162ce0f1e21601710da0f1380eb3928ccedd1ef0d56965bb",
+      "class_hash": "0x35dd96b8494683a800808903232637bdc520e66c8bf8c2f95d6399106ae414f",
       "abi": [
         {
           "type": "impl",
@@ -1368,6 +1368,20 @@
         },
         {
           "type": "enum",
+          "name": "core::bool",
+          "variants": [
+            {
+              "name": "False",
+              "type": "()"
+            },
+            {
+              "name": "True",
+              "type": "()"
+            }
+          ]
+        },
+        {
+          "type": "enum",
           "name": "card_knight::models::skill::Skill",
           "variants": [
             {
@@ -1392,10 +1406,6 @@
             },
             {
               "name": "Shuffle",
-              "type": "()"
-            },
-            {
-              "name": "UnfairTrade",
               "type": "()"
             },
             {
@@ -1431,20 +1441,6 @@
             {
               "name": "high_score",
               "type": "core::integer::u32"
-            }
-          ]
-        },
-        {
-          "type": "enum",
-          "name": "core::bool",
-          "variants": [
-            {
-              "name": "False",
-              "type": "()"
-            },
-            {
-              "name": "True",
-              "type": "()"
             }
           ]
         },
@@ -1486,6 +1482,26 @@
             },
             {
               "type": "function",
+              "name": "move_to_deal",
+              "inputs": [
+                {
+                  "name": "game_id",
+                  "type": "core::integer::u32"
+                },
+                {
+                  "name": "direction",
+                  "type": "card_knight::models::game::Direction"
+                },
+                {
+                  "name": "selection",
+                  "type": "core::bool"
+                }
+              ],
+              "outputs": [],
+              "state_mutability": "external"
+            },
+            {
+              "type": "function",
               "name": "use_skill",
               "inputs": [
                 {
@@ -1513,8 +1529,12 @@
                   "type": "core::integer::u32"
                 },
                 {
-                  "name": "direction",
-                  "type": "card_knight::models::game::Direction"
+                  "name": "x",
+                  "type": "core::integer::u32"
+                },
+                {
+                  "name": "y",
+                  "type": "core::integer::u32"
                 }
               ],
               "outputs": [],
@@ -1707,6 +1727,90 @@
                 }
               ],
               "state_mutability": "view"
+            },
+            {
+              "type": "function",
+              "name": "hero_skills_cd",
+              "inputs": [
+                {
+                  "name": "game_id",
+                  "type": "core::integer::u32"
+                },
+                {
+                  "name": "player_address",
+                  "type": "core::starknet::contract_address::ContractAddress"
+                }
+              ],
+              "outputs": [
+                {
+                  "type": "(core::integer::u32, core::integer::u32, core::integer::u32)"
+                }
+              ],
+              "state_mutability": "view"
+            },
+            {
+              "type": "function",
+              "name": "skill_cd",
+              "inputs": [
+                {
+                  "name": "game_id",
+                  "type": "core::integer::u32"
+                },
+                {
+                  "name": "player_address",
+                  "type": "core::starknet::contract_address::ContractAddress"
+                },
+                {
+                  "name": "skill",
+                  "type": "card_knight::models::skill::Skill"
+                }
+              ],
+              "outputs": [
+                {
+                  "type": "core::integer::u32"
+                }
+              ],
+              "state_mutability": "view"
+            },
+            {
+              "type": "function",
+              "name": "open_lock",
+              "inputs": [
+                {
+                  "name": "game_id",
+                  "type": "core::integer::u32"
+                },
+                {
+                  "name": "direction",
+                  "type": "card_knight::models::game::Direction"
+                },
+                {
+                  "name": "wheel_result",
+                  "type": "core::bool"
+                }
+              ],
+              "outputs": [],
+              "state_mutability": "external"
+            },
+            {
+              "type": "function",
+              "name": "demon_deals",
+              "inputs": [
+                {
+                  "name": "user",
+                  "type": "core::starknet::contract_address::ContractAddress"
+                },
+                {
+                  "name": "game_id",
+                  "type": "core::integer::u32"
+                }
+              ],
+              "outputs": [
+                {
+                  "type": "(core::byte_array::ByteArray, core::byte_array::ByteArray)"
+                }
+              ],
+              "state_mutability": "view"
             }
           ]
         },
@@ -1828,11 +1932,13 @@
         "dojo_init",
         "start_game",
         "move",
+        "move_to_deal",
         "use_skill",
         "use_swap_skill",
         "use_curse_skill",
         "level_up",
         "set_contract",
+        "open_lock",
         "upgrade"
       ]
     }
@@ -1840,7 +1946,7 @@
   "models": [
     {
       "members": [],
-      "class_hash": "0x2914aba35e0d0500d24e99d7101b753a984678c773c05e6df8157f306607948",
+      "class_hash": "0x2a5dd34fd1ad907ede293f7e16f28b9e4e201ef6350f7e3626aae19d68d30ea",
       "tag": "card_knight-Card",
       "selector": "0x779b4f94f686c1e254def27499decd974523205b8c86d9eaf6e3ed57d13b6f2"
     },
@@ -1864,7 +1970,7 @@
     },
     {
       "members": [],
-      "class_hash": "0x1bcbc79ab164f6246cdfe7cebed63d0ed83786d5479da2bd88bdd49438024b9",
+      "class_hash": "0x20e59cf41dc2a76c4eded6c733a74fa4193c14daa727941d13dde8b864d73ad",
       "tag": "card_knight-PlayerSkill",
       "selector": "0x380bb620b10842fa9f82bed37e08051a9be9ad23de418c705ca67b88d01bd81"
     },
