@@ -193,18 +193,6 @@ mod actions {
         }
 
 
-        fn demon_deals(
-            self: @ContractState, user: ContractAddress, game_id: u32,
-        ) -> (ByteArray, ByteArray) {
-            let mut world = self.world(@"card_knight");
-            let mut player: Player = world.read_model((game_id, user));
-
-            let option1: ByteArray = "Lose 33% of current HP (rounded down).";
-            let option2: ByteArray = "Gain 3 XP";
-            (option1, option2)
-        }
-
-
         fn open_lock(
             ref self: ContractState, game_id: u32, direction: Direction, wheel_result: bool,
         ) {
@@ -292,6 +280,30 @@ mod actions {
             }
         }
 
+        fn demon_deals(
+            self: @ContractState, user: ContractAddress, game_id: u32,
+        ) -> (ByteArray, ByteArray) {
+            let mut world = self.world(@"card_knight");
+            let mut player: Player = world.read_model((game_id, user));
+
+            let rnd = (player.x.into() * 3 + player.y.into() * 3 + game_id.into() + player.hp) % 10;
+            let hp_ = player.hp / 3;
+
+            if (rnd < 5) {
+                let option1: ByteArray = format!("Lose {} HP", hp_);
+                let option2: ByteArray = "Gain 3 XP";
+                return (option1, option2);
+            } else if (rnd < 8) {
+                let option1: ByteArray = "Lose 3 HP";
+                let option2: ByteArray = "Gain 2 XP";
+                return (option1, option2);
+            }
+
+            let option1: ByteArray = "Lose 10% point.";
+            let option2: ByteArray = "Reset skill cooldown";
+
+            (option1, option2)
+        }
 
         // Will update assert
         fn move_to_deal(
@@ -327,10 +339,25 @@ mod actions {
             assert(existingCard.card_id == CardIdEnum::DemonsDeal, 'Invalid card move to DD');
 
             if (selection) {
-                //let rnd = player.x + player.y + get_block_timestamp() % 2;
-                player.hp = player.hp - (player.hp / 3);
-                player.exp += 3;
-                player.total_xp += 3;
+                let rnd = (player.x.into() * 3
+                    + player.y.into() * 3
+                    + game_id.into()
+                    + player.hp) % 10;
+                let hp_ = player.hp / 3;
+
+                if (rnd < 5) {
+                    player.hp = player.hp - hp_;
+                    player.exp += 3;
+                    player.total_xp += 3;
+                } else if (rnd < 8) {
+                    player.hp = player.hp - 3;
+                    player.exp += 2;
+                    player.total_xp += 2;
+                } else {
+                    player.exp = player.exp - player.exp / 10;
+                    player.total_xp = player.total_xp - player.total_xp / 10;
+                    player.turn = player.turn + 5;
+                }
             }
 
             // if card is ItemChest dont change any position

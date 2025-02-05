@@ -1205,6 +1205,10 @@ mod tests {
         };
         world.write_model(@new_card);
 
+        let (op1, op2) = card_knight.demon_deals(caller, 1);
+        assert(op1 == "Lose 3 HP", 'Error op1');
+        assert(op2 == "Gain 2 XP", 'Error op1');
+
         // Move player
         card_knight.move_to_deal(game_id, Direction::Left, true,);
 
@@ -1215,11 +1219,11 @@ mod tests {
 
         assert(moved_player.x == 0, 'Player did not move left');
         assert(moved_player.y == 1, 'Player y pos');
-        assert(moved_player.hp == 14, 'Error Player hp ');
+        assert(moved_player.hp == 17, 'Error Player hp ');
         assert(moved_player.max_hp == 20, 'Error max hp');
         assert(moved_player.sequence == 1, 'Error sequence');
-        assert(moved_player.exp == 3, 'Error exp');
-        assert(moved_player.total_xp == 3, 'Error total_xp');
+        assert(moved_player.exp == 2, 'Error exp');
+        assert(moved_player.total_xp == 2, 'Error total_xp');
     }
 
 
